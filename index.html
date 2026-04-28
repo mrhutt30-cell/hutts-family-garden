@@ -169,6 +169,23 @@ header h1 .leaf{color:#d4a843}
 .pal-divider{padding:.4rem .8rem;font-size:.7rem;font-weight:700;color:#9a8a75;text-transform:uppercase;letter-spacing:1px;background:#302c28;border-bottom:1px solid #3a3530}
 .pal-item.api-result{border-left:3px solid #2d5a3f}
 .pal-item.custom-add{border-left:3px solid #d4a843;color:#d4a843;font-weight:600}
+/* API search loading indicator */
+.pal-searching{animation:palPulse 1.5s ease-in-out infinite}
+@keyframes palPulse{0%,100%{opacity:.6}50%{opacity:1}}
+/* New bed types */
+.map-bed.rail{background:linear-gradient(135deg,#5a4a3a,#4a3a2a);border-top:2px solid #d4a843}
+.map-bed.planter{background:linear-gradient(135deg,#4a4a4a,#3a3a3a);border-radius:50%}
+.map-bed.custom-type{background:linear-gradient(135deg,#3a4a3a,#2a3a2a)}
+/* Layout edit mode */
+.layout-toolbar{max-width:1000px;margin:.5rem auto;padding:0 .8rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.layout-toolbar input,.layout-toolbar select{padding:.4rem;background:#1e1c1a;border:1px solid #3a3530;border-radius:6px;color:#ede6d3;font-size:.82rem}
+.layout-toolbar button{padding:.4rem .8rem;background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer}
+.edit-layout-btn{padding:.4rem .8rem;background:#2a2725;border:1px solid #3a3530;color:#d4a843;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-bottom:.4rem}
+.edit-layout-btn.active{background:#d4a843;color:#1e1c1a}
+.bed-resize-handle{position:absolute;bottom:0;right:0;width:12px;height:12px;background:#d4a843;cursor:nwse-resize;z-index:30;border-radius:2px 0 4px 0}
+.bed-delete-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#5a2a1a;color:#c09a8a;border:1.5px solid #6a3a28;font-size:.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:30}
+.garden-map.layout-editing{overflow:visible;touch-action:none}
+.garden-map.layout-editing .map-bed:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 </style>
 </head>
 <body>
@@ -191,11 +208,24 @@ header h1 .leaf{color:#d4a843}
 <!-- ═══════ MAP VIEW ═══════ -->
 <div id="mapView">
     <div class="map-wrap">
-        <p class="map-hint">Tap a bed to edit</p>
+        <p class="map-hint" id="mapHint">Tap a bed to edit</p>
+        <button class="edit-layout-btn" id="editLayoutBtn" onclick="toggleLayoutEdit()" style="display:none">🔧 Edit Layout</button>
         <div class="garden-map" id="gardenMap">
             <div class="house">House</div>
             <div id="mapTT" class="map-tt"></div>
         </div>
+    </div>
+    <div class="layout-toolbar" id="layoutToolbar" style="display:none">
+        <select id="newBedType">
+            <option value="tall">Raised Bed</option>
+            <option value="ground">Ground Bed</option>
+            <option value="rail">Rail Bed</option>
+            <option value="planter">5-Gal Planter</option>
+            <option value="custom">Custom</option>
+        </select>
+        <input type="text" id="newBedName" placeholder="Bed name…" style="flex:1;min-width:100px">
+        <input type="text" id="newBedCustomType" placeholder="Custom type name…" style="display:none;min-width:100px">
+        <button onclick="addNewBed()">➕ Add</button>
     </div>
     <div class="legend" id="mapLegend"></div>
 </div>
@@ -405,23 +435,24 @@ PLANTS.forEach(p => {
    GARDEN LAYOUT
    Ground boxes: 2 wide × 3 deep
    ═══════════════════════════════════════════════ */
-const BEDS = [
-    {id:"BT1",name:"Back Tall 1",type:"tall",mapPos:{left:"14%",top:"11%",w:"12%",h:"19%"}},
-    {id:"BT2",name:"Back Tall 2",type:"tall",mapPos:{left:"28%",top:"11%",w:"12%",h:"19%"}},
-    {id:"BT3",name:"Back Tall 3",type:"tall",mapPos:{left:"42%",top:"11%",w:"12%",h:"19%"}},
-    {id:"BT4",name:"Back Tall 4",type:"tall",mapPos:{left:"56%",top:"11%",w:"12%",h:"19%"}},
-    {id:"BT5",name:"Back Tall 5",type:"tall",mapPos:{left:"70%",top:"11%",w:"12%",h:"19%"}},
-    {id:"CG1",name:"Ground 1",type:"ground",mapPos:{left:"20%",top:"36%",w:"18%",h:"12%"}},
-    {id:"CG2",name:"Ground 2",type:"ground",mapPos:{left:"42%",top:"36%",w:"18%",h:"12%"}},
-    {id:"CG3",name:"Ground 3",type:"ground",mapPos:{left:"20%",top:"50%",w:"18%",h:"12%"}},
-    {id:"CG4",name:"Ground 4",type:"ground",mapPos:{left:"42%",top:"50%",w:"18%",h:"12%"}},
-    {id:"CG5",name:"Ground 5",type:"ground",mapPos:{left:"20%",top:"64%",w:"18%",h:"12%"}},
-    {id:"CG6",name:"Ground 6",type:"ground",mapPos:{left:"42%",top:"64%",w:"18%",h:"12%"}},
-    {id:"RT1",name:"Right Tall 1",type:"tall",mapPos:{left:"83%",top:"12%",w:"13%",h:"17%"}},
-    {id:"RT2",name:"Right Tall 2",type:"tall",mapPos:{left:"83%",top:"32%",w:"13%",h:"17%"}},
-    {id:"RT3",name:"Right Tall 3",type:"tall",mapPos:{left:"83%",top:"52%",w:"13%",h:"17%"}},
-    {id:"RT4",name:"Right Tall 4",type:"tall",mapPos:{left:"83%",top:"72%",w:"13%",h:"17%"}},
+const DEFAULT_BEDS = [
+    {id:"BT1",name:"Back Tall 1",type:"tall",mapPos:{left:14,top:11,w:12,h:19}},
+    {id:"BT2",name:"Back Tall 2",type:"tall",mapPos:{left:28,top:11,w:12,h:19}},
+    {id:"BT3",name:"Back Tall 3",type:"tall",mapPos:{left:42,top:11,w:12,h:19}},
+    {id:"BT4",name:"Back Tall 4",type:"tall",mapPos:{left:56,top:11,w:12,h:19}},
+    {id:"BT5",name:"Back Tall 5",type:"tall",mapPos:{left:70,top:11,w:12,h:19}},
+    {id:"CG1",name:"Ground 1",type:"ground",mapPos:{left:20,top:36,w:18,h:12}},
+    {id:"CG2",name:"Ground 2",type:"ground",mapPos:{left:42,top:36,w:18,h:12}},
+    {id:"CG3",name:"Ground 3",type:"ground",mapPos:{left:20,top:50,w:18,h:12}},
+    {id:"CG4",name:"Ground 4",type:"ground",mapPos:{left:42,top:50,w:18,h:12}},
+    {id:"CG5",name:"Ground 5",type:"ground",mapPos:{left:20,top:64,w:18,h:12}},
+    {id:"CG6",name:"Ground 6",type:"ground",mapPos:{left:42,top:64,w:18,h:12}},
+    {id:"RT1",name:"Right Tall 1",type:"tall",mapPos:{left:83,top:12,w:13,h:17}},
+    {id:"RT2",name:"Right Tall 2",type:"tall",mapPos:{left:83,top:32,w:13,h:17}},
+    {id:"RT3",name:"Right Tall 3",type:"tall",mapPos:{left:83,top:52,w:13,h:17}},
+    {id:"RT4",name:"Right Tall 4",type:"tall",mapPos:{left:83,top:72,w:13,h:17}},
 ];
+let BEDS = DEFAULT_BEDS.map(b => ({...b, mapPos:{...b.mapPos}}));
 
 /* ═══════════════════════════════════════════════
    FIREBASE + DATA LAYER
@@ -440,6 +471,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 const bedsRef = db.ref('gardens/hutts-family-garden/beds');
+const layoutRef = db.ref('gardens/hutts-family-garden/layout');
 
 /* ═══════════════════════════════════════════════
    AUTHENTICATION
@@ -505,6 +537,8 @@ function updateEditableUI() {
     });
     const hint = document.getElementById('canvasHint');
     if (hint && !canEdit()) hint.textContent = 'View-only mode';
+    document.getElementById('editLayoutBtn').style.display = canEdit() ? '' : 'none';
+    if (!canEdit() && layoutEditMode) toggleLayoutEdit();
     if (currentBedId) renderBedCanvas();
 }
 
@@ -533,6 +567,25 @@ db.ref('.info/connected').on('value', snap => {
         el.textContent = '🔴 Offline';
         el.className = 'conn-status conn-off';
     }
+});
+
+// Listen for layout changes
+layoutRef.on('value', snap => {
+    const val = snap.val();
+    if (val) {
+        BEDS = Object.values(val).map(b => ({
+            id: b.id, name: b.name, type: b.type,
+            mapPos: { left: b.mapPos.left, top: b.mapPos.top, w: b.mapPos.w, h: b.mapPos.h }
+        }));
+    } else {
+        // First time — save default layout to Firebase
+        BEDS = DEFAULT_BEDS.map(b => ({...b, mapPos:{...b.mapPos}}));
+        const layoutObj = {};
+        BEDS.forEach(b => { layoutObj[b.id] = { id: b.id, name: b.name, type: b.type, mapPos: {...b.mapPos} }; });
+        layoutRef.set(layoutObj);
+    }
+    renderMap();
+    renderStats();
 });
 
 // Listen for real-time updates
@@ -627,22 +680,30 @@ function renderStats() {
 /* ═══════════════════════════════════════════════
    MAP VIEW
    ═══════════════════════════════════════════════ */
+let layoutEditMode = false;
+let layoutDragState = null;
+let apiSearching = false;
+
+function bedTypeClass(type) {
+    if (['tall','ground','rail','planter'].includes(type)) return type;
+    return 'custom-type';
+}
+
 function renderMap() {
     const map = document.getElementById("gardenMap");
     map.querySelectorAll(".map-bed").forEach(e => e.remove());
 
     BEDS.forEach(def => {
         const bed = DATA.beds[def.id];
-        if (!bed) return;
         const el = document.createElement("div");
-        el.className = `map-bed ${def.type}`;
-        el.style.left = def.mapPos.left;
-        el.style.top = def.mapPos.top;
-        el.style.width = def.mapPos.w;
-        el.style.height = def.mapPos.h;
+        el.className = `map-bed ${bedTypeClass(def.type)}`;
+        el.style.left = def.mapPos.left + "%";
+        el.style.top = def.mapPos.top + "%";
+        el.style.width = def.mapPos.w + "%";
+        el.style.height = def.mapPos.h + "%";
 
-        // Render plant dots at their x,y positions within the bed
-        if (bed.plants) {
+        // Render plant dots
+        if (bed && bed.plants) {
             Object.values(bed.plants).forEach(p => {
                 const info = findPlant(p.crop, p.variety);
                 const dot = document.createElement("div");
@@ -656,23 +717,45 @@ function renderMap() {
 
         const lbl = document.createElement("div");
         lbl.className = "map-bed-label";
-        lbl.textContent = bed.name;
+        lbl.textContent = bed ? bed.name : def.name;
         el.appendChild(lbl);
 
-        el.addEventListener("click", () => openBedEditor(def.id));
+        if (layoutEditMode) {
+            // Resize handle
+            const handle = document.createElement("div");
+            handle.className = "bed-resize-handle";
+            handle.addEventListener("pointerdown", e => startBedResize(e, def));
+            el.appendChild(handle);
+
+            // Delete button
+            const delBtn = document.createElement("div");
+            delBtn.className = "bed-delete-btn";
+            delBtn.textContent = "✕";
+            delBtn.addEventListener("pointerdown", e => {
+                e.stopPropagation();
+                e.preventDefault();
+                deleteBed(def.id);
+            });
+            el.appendChild(delBtn);
+
+            // Drag to move
+            el.addEventListener("pointerdown", e => startBedDrag(e, def));
+        } else {
+            el.addEventListener("click", () => openBedEditor(def.id));
+        }
 
         // Tooltip
         el.addEventListener("mouseenter", () => {
             const tt = document.getElementById("mapTT");
             const counts = {};
-            if (bed.plants) {
+            if (bed && bed.plants) {
                 Object.values(bed.plants).forEach(p => {
                     const info = findPlant(p.crop, p.variety);
                     counts[info.displayName] = (counts[info.displayName] || 0) + 1;
                 });
             }
             const lines = Object.entries(counts);
-            tt.innerHTML = `<b>${bed.name}</b><br>` +
+            tt.innerHTML = `<b>${bed ? bed.name : def.name}</b><br>` +
                 (lines.length ? lines.map(([n, c]) => `${n} ×${c}`).join("<br>") : "<i>Empty</i>");
             tt.classList.add("vis");
         });
@@ -713,6 +796,7 @@ let selectedPlantId = null; // currently selected plant in the canvas
 let dragState = null;
 
 function openBedEditor(bedId) {
+    if (layoutEditMode) return;
     currentBedId = bedId;
     selectedPlant = null;
     selectedPlantId = null;
@@ -722,7 +806,8 @@ function openBedEditor(bedId) {
     document.getElementById("palSearch").value = "";
 
     const bed = DATA.beds[bedId];
-    document.getElementById("bedTitle").textContent = bed.name;
+    if (!bed) { DATA.beds[bedId] = { name: bedId, plants: {} }; }
+    document.getElementById("bedTitle").textContent = (bed || DATA.beds[bedId]).name;
 
     renderPalette();
     renderBedCanvas();
@@ -800,6 +885,11 @@ function renderPalette(filter) {
         }).join("");
     }
 
+    // Show searching indicator while API call is in progress
+    if (apiSearching && q && q.length >= 2 && PERENUAL_KEY) {
+        html += `<div class="pal-divider pal-searching">🔍 Searching online…</div>`;
+    }
+
     // Always show "Add custom" when searching
     if (q && canEdit()) {
         html += `<div class="pal-item custom-add" data-src="custom">
@@ -834,19 +924,24 @@ function renderPalette(filter) {
     // Trigger API search after debounce
     if (q && q.length >= 2) {
         clearTimeout(apiSearchTimeout);
-        apiSearchTimeout = setTimeout(() => searchPlantsAPI(q), 400);
+        apiSearchTimeout = setTimeout(() => {
+            apiSearching = true;
+            renderPalette(document.getElementById("palSearch").value);
+            searchPlantsAPI(q);
+        }, 400);
     } else {
         apiResults = [];
+        apiSearching = false;
     }
 }
 
 /* ─── Perenual API Search (needs free key from perenual.com) ─── */
 const PERENUAL_KEY = 'sk-J6h669f0cdebe018616821'; // Get a free key at perenual.com/docs/api to enable online plant search
 async function searchPlantsAPI(query) {
-    if (!PERENUAL_KEY) return; // API disabled — custom entry still works
+    if (!PERENUAL_KEY) return;
     try {
         const resp = await fetch(`https://perenual.com/api/species-list?key=${PERENUAL_KEY}&q=${encodeURIComponent(query)}`);
-        if (!resp.ok) return;
+        if (!resp.ok) { apiSearching = false; renderPalette(document.getElementById("palSearch").value); return; }
         const data = await resp.json();
         const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
         apiResults = (data.data || []).slice(0, 8)
@@ -863,10 +958,14 @@ async function searchPlantsAPI(query) {
                     _apiIdx: i, _fromAPI: true
                 };
             });
-        // Re-render palette to show API results (keep current filter)
+        apiSearching = false;
         const q = document.getElementById("palSearch").value;
         if (q) renderPalette(q);
-    } catch(e) { /* silent fail */ }
+    } catch(e) {
+        apiSearching = false;
+        const q = document.getElementById("palSearch").value;
+        if (q) renderPalette(q);
+    }
 }
 
 const catColors = {Herb:'#43a047','Fruit Veg':'#c62828',Flower:'#e91e63',Tree:'#5d4037',Succulent:'#78909c','Leafy Green':'#2e7d32',Other:'#66bb6a'};
@@ -1264,8 +1363,10 @@ function startRenameBed() {
    EXPORT / IMPORT / RESET
    ═══════════════════════════════════════════════ */
 function exportData() {
+    const layoutObj = {};
+    BEDS.forEach(b => { layoutObj[b.id] = { id: b.id, name: b.name, type: b.type, mapPos: {...b.mapPos} }; });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 4, beds: DATA.beds }, null, 2)], { type: "application/json" }));
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 4, beds: DATA.beds, layout: layoutObj }, null, 2)], { type: "application/json" }));
     a.download = "hutts-garden.json"; a.click();
 }
 
@@ -1278,6 +1379,7 @@ function importData(ev) {
             const d = JSON.parse(e.target.result);
             if (d.version === 4 && d.beds) {
                 bedsRef.set(d.beds);
+                if (d.layout) layoutRef.set(d.layout);
                 alert("Imported!");
             } else if (d.version === 3 && d.beds) {
                 migrateV3toV4(d);
@@ -1295,7 +1397,179 @@ function resetData() {
     if (!confirm("Reset ALL garden data? This cannot be undone.")) return;
     const fresh = defaultBeds();
     bedsRef.set(fresh);
+    // Reset layout to defaults
+    const layoutObj = {};
+    DEFAULT_BEDS.forEach(b => { layoutObj[b.id] = { id: b.id, name: b.name, type: b.type, mapPos: {...b.mapPos} }; });
+    layoutRef.set(layoutObj);
+    if (layoutEditMode) toggleLayoutEdit();
     if (currentBedId) closeBedEditor();
+}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT EDITOR
+   ═══════════════════════════════════════════════ */
+function toggleLayoutEdit() {
+    if (!canEdit() && !layoutEditMode) return;
+    layoutEditMode = !layoutEditMode;
+    const btn = document.getElementById('editLayoutBtn');
+    const toolbar = document.getElementById('layoutToolbar');
+    const map = document.getElementById('gardenMap');
+    const hint = document.getElementById('mapHint');
+    if (layoutEditMode) {
+        btn.textContent = '✅ Done Editing';
+        btn.classList.add('active');
+        toolbar.style.display = 'flex';
+        map.classList.add('layout-editing');
+        hint.textContent = 'Drag beds to move • Drag corners to resize • Tap to select';
+    } else {
+        btn.textContent = '🔧 Edit Layout';
+        btn.classList.remove('active');
+        toolbar.style.display = 'none';
+        map.classList.remove('layout-editing');
+        hint.textContent = 'Tap a bed to edit';
+    }
+    renderMap();
+}
+
+// Custom type dropdown toggle
+document.getElementById('newBedType').addEventListener('change', function() {
+    document.getElementById('newBedCustomType').style.display = this.value === 'custom' ? '' : 'none';
+});
+
+const BED_DEFAULT_SIZES = {
+    tall:    { w: 12, h: 17 },
+    ground:  { w: 18, h: 12 },
+    rail:    { w: 25, h: 5 },
+    planter: { w: 6,  h: 6 },
+};
+
+function addNewBed() {
+    if (!canEdit()) return;
+    const typeSelect = document.getElementById('newBedType').value;
+    const name = document.getElementById('newBedName').value.trim();
+    if (!name) { alert('Enter a bed name'); return; }
+
+    let type = typeSelect;
+    if (typeSelect === 'custom') {
+        type = document.getElementById('newBedCustomType').value.trim() || 'custom';
+    }
+
+    const id = genId();
+    const sizes = BED_DEFAULT_SIZES[type] || BED_DEFAULT_SIZES.ground;
+    const newBed = {
+        id, name, type,
+        mapPos: { left: Math.round(50 - sizes.w / 2), top: Math.round(50 - sizes.h / 2), w: sizes.w, h: sizes.h }
+    };
+
+    // Save to layout
+    layoutRef.child(id).set(newBed);
+    // Create bed data entry
+    bedsRef.child(id).set({ name, plants: {} });
+
+    document.getElementById('newBedName').value = '';
+    document.getElementById('newBedCustomType').value = '';
+}
+
+function deleteBed(bedId) {
+    if (!canEdit()) return;
+    const bed = DATA.beds[bedId];
+    const hasPlants = bed && bed.plants && Object.keys(bed.plants).length > 0;
+    if (hasPlants) {
+        if (!confirm(`This bed has ${Object.keys(bed.plants).length} plant(s). Delete it anyway?`)) return;
+    } else {
+        if (!confirm('Delete this bed?')) return;
+    }
+    layoutRef.child(bedId).remove();
+    bedsRef.child(bedId).remove();
+}
+
+function startBedDrag(e, def) {
+    if (!layoutEditMode || !canEdit()) return;
+    if (e.target.classList.contains('bed-resize-handle') || e.target.classList.contains('bed-delete-btn')) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const map = document.getElementById('gardenMap');
+    const mapRect = map.getBoundingClientRect();
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    let moved = false;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origLeft = def.mapPos.left;
+    const origTop = def.mapPos.top;
+
+    function onMove(ev) {
+        const dx = (ev.clientX - startX) / mapRect.width * 100;
+        const dy = (ev.clientY - startY) / mapRect.height * 100;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) moved = true;
+        const newLeft = Math.max(0, Math.min(100 - def.mapPos.w, Math.round((origLeft + dx) * 10) / 10));
+        const newTop = Math.max(0, Math.min(100 - def.mapPos.h, Math.round((origTop + dy) * 10) / 10));
+        el.style.left = newLeft + '%';
+        el.style.top = newTop + '%';
+    }
+
+    function onUp(ev) {
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', onUp);
+        el.removeEventListener('pointercancel', onUp);
+        el.removeEventListener('lostpointercapture', onUp);
+        if (moved) {
+            const newLeft = Math.round(parseFloat(el.style.left) * 10) / 10;
+            const newTop = Math.round(parseFloat(el.style.top) * 10) / 10;
+            def.mapPos.left = newLeft;
+            def.mapPos.top = newTop;
+            layoutRef.child(def.id).update({ mapPos: { ...def.mapPos } });
+        }
+    }
+
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    el.addEventListener('lostpointercapture', onUp);
+}
+
+function startBedResize(e, def) {
+    if (!layoutEditMode || !canEdit()) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const map = document.getElementById('gardenMap');
+    const mapRect = map.getBoundingClientRect();
+    const bedEl = e.target.parentElement;
+    e.target.setPointerCapture(e.pointerId);
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origW = def.mapPos.w;
+    const origH = def.mapPos.h;
+
+    function onMove(ev) {
+        const dw = (ev.clientX - startX) / mapRect.width * 100;
+        const dh = (ev.clientY - startY) / mapRect.height * 100;
+        const newW = Math.max(3, Math.round((origW + dw) * 10) / 10);
+        const newH = Math.max(3, Math.round((origH + dh) * 10) / 10);
+        bedEl.style.width = newW + '%';
+        bedEl.style.height = newH + '%';
+    }
+
+    function onUp(ev) {
+        e.target.removeEventListener('pointermove', onMove);
+        e.target.removeEventListener('pointerup', onUp);
+        e.target.removeEventListener('pointercancel', onUp);
+        e.target.removeEventListener('lostpointercapture', onUp);
+        const newW = Math.round(parseFloat(bedEl.style.width) * 10) / 10;
+        const newH = Math.round(parseFloat(bedEl.style.height) * 10) / 10;
+        def.mapPos.w = newW;
+        def.mapPos.h = newH;
+        layoutRef.child(def.id).update({ mapPos: { ...def.mapPos } });
+    }
+
+    e.target.addEventListener('pointermove', onMove);
+    e.target.addEventListener('pointerup', onUp);
+    e.target.addEventListener('pointercancel', onUp);
+    e.target.addEventListener('lostpointercapture', onUp);
 }
 
 /* ═══════════════════════════════════════════════
