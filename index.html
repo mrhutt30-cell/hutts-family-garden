@@ -135,9 +135,29 @@ header h1 .leaf{color:#d4a843}
     .pal-panel{max-height:35vh}
     .plant-circle{width:32px;height:32px;font-size:.8rem}
 }
+/* Auth bar */
+.auth-bar{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:.5rem 1rem;background:#22201e;border-bottom:1px solid #3a3530}
+.auth-bar .user-info{font-size:.8rem;color:#9a8a75;display:flex;align-items:center;gap:.4rem}
+.auth-bar .user-info img{width:22px;height:22px;border-radius:50%;border:1px solid #3a3530}
+.auth-bar .user-name{color:#ede6d3;font-weight:600}
+.auth-bar .role-badge{font-size:.7rem;padding:.1rem .5rem;border-radius:10px;font-weight:600}
+.role-editor{background:rgba(212,168,67,.15);color:#d4a843;border:1px solid rgba(212,168,67,.3)}
+.role-viewer{background:rgba(154,138,117,.15);color:#9a8a75;border:1px solid rgba(154,138,117,.3)}
+.auth-btn{padding:.3rem .8rem;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;min-height:34px}
+.auth-btn-sign-in{background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a}
+.auth-btn-sign-out{background:#3a3530;color:#9a8a75;border:1px solid #4a4540}
+.readonly-banner{text-align:center;padding:.4rem;background:rgba(154,138,117,.1);color:#9a8a75;font-size:.78rem;border-bottom:1px solid #3a3530}
 </style>
 </head>
 <body>
+
+<!-- Auth bar -->
+<div class="auth-bar" id="authBar">
+    <span class="user-info" id="userInfo" style="display:none"></span>
+    <button class="auth-btn auth-btn-sign-in" id="signInBtn" onclick="signIn()">🔐 Sign in with Google</button>
+    <button class="auth-btn auth-btn-sign-out" id="signOutBtn" onclick="signOut()" style="display:none">Sign out</button>
+</div>
+<div class="readonly-banner" id="readonlyBanner" style="display:none">👁️ View-only mode — sign in with an authorized account to edit</div>
 
 <header>
     <h1><span class="leaf">🌿</span> The Hutt's Family Garden</h1>
@@ -203,6 +223,7 @@ header h1 .leaf{color:#d4a843}
 <!-- Firebase SDK (compat for script-tag usage) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════
@@ -380,7 +401,75 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 const bedsRef = db.ref('gardens/hutts-family-garden/beds');
+
+/* ═══════════════════════════════════════════════
+   AUTHENTICATION
+   ═══════════════════════════════════════════════ */
+const EDITORS = [
+    'mrhutt30@gmail.com',
+    'mrhutt30@hotmail.com',
+];
+
+let currentUser = null;
+let userIsEditor = false;
+
+function canEdit() { return userIsEditor; }
+
+function signIn() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => {
+        if (err.code !== 'auth/popup-closed-by-user') alert('Sign-in failed: ' + err.message);
+    });
+}
+
+function signOut() {
+    auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    userIsEditor = user ? EDITORS.includes(user.email.toLowerCase()) : false;
+    updateAuthUI();
+    updateEditableUI();
+});
+
+function updateAuthUI() {
+    const info = document.getElementById('userInfo');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const banner = document.getElementById('readonlyBanner');
+
+    if (currentUser) {
+        const photo = currentUser.photoURL ? `<img src="${currentUser.photoURL}" alt="">` : '';
+        const badge = userIsEditor
+            ? '<span class="role-badge role-editor">Editor</span>'
+            : '<span class="role-badge role-viewer">Viewer</span>';
+        info.innerHTML = `${photo}<span class="user-name">${currentUser.displayName || currentUser.email}</span>${badge}`;
+        info.style.display = 'flex';
+        signInBtn.style.display = 'none';
+        signOutBtn.style.display = '';
+        banner.style.display = userIsEditor ? 'none' : '';
+    } else {
+        info.style.display = 'none';
+        signInBtn.style.display = '';
+        signOutBtn.style.display = 'none';
+        banner.style.display = '';
+    }
+}
+
+function updateEditableUI() {
+    // Hide/show edit controls based on editor status
+    document.querySelectorAll('.bulk-row').forEach(el => el.style.display = canEdit() ? '' : 'none');
+    document.querySelectorAll('.data-btn').forEach(el => {
+        if (el.textContent.includes('Import') || el.textContent.includes('Reset'))
+            el.style.display = canEdit() ? '' : 'none';
+    });
+    const hint = document.getElementById('canvasHint');
+    if (hint && !canEdit()) hint.textContent = 'View-only mode';
+    if (currentBedId) renderBedCanvas();
+}
 
 let DATA = { beds: {} };
 let firebaseReady = false;
@@ -667,8 +756,8 @@ function renderBedCanvas() {
         el.innerHTML = `<span>${info.emoji}</span>`;
         el.title = info.displayName;
 
-        // Delete button for selected plant
-        if (id === selectedPlantId) {
+        // Delete button for selected plant (editors only)
+        if (id === selectedPlantId && canEdit()) {
             const del = document.createElement("div");
             del.className = "plant-delete-btn";
             del.textContent = "✕";
@@ -689,8 +778,8 @@ function renderBedCanvas() {
 
 // Click on empty canvas space to place a new plant
 document.getElementById("bedCanvas").addEventListener("pointerdown", function(e) {
-    if (e.target !== this) return; // only direct clicks on canvas
-    if (!selectedPlant) return;
+    if (e.target !== this) return;
+    if (!selectedPlant || !canEdit()) return;
 
     const rect = this.getBoundingClientRect();
     const x = Math.round(((e.clientX - rect.left) / rect.width * 100) * 10) / 10;
@@ -711,6 +800,12 @@ document.getElementById("bedCanvas").addEventListener("pointerdown", function(e)
 
 /* ─── Drag ─── */
 function startDrag(e, plantId) {
+    if (!canEdit()) {
+        // Allow tap-to-view but not drag
+        selectedPlantId = plantId;
+        renderBedCanvas();
+        return;
+    }
     e.preventDefault();
     e.stopPropagation();
 
@@ -786,6 +881,7 @@ function startDrag(e, plantId) {
 }
 
 function deletePlant(bedId, plantId) {
+    if (!canEdit()) return;
     if (DATA.beds[bedId].plants[plantId]) {
         delete DATA.beds[bedId].plants[plantId];
         bedsRef.child(`${bedId}/plants/${plantId}`).remove();
@@ -809,6 +905,7 @@ function updateBulkUI() {
 }
 
 function bulkPlace() {
+    if (!canEdit()) { alert("You don't have edit access"); return; }
     if (!selectedPlant) { alert("Select a plant from the palette first"); return; }
     const qty = Math.min(99, Math.max(1, parseInt(document.getElementById("bulkQty").value) || 1));
     if (!currentBedId) return;
@@ -894,12 +991,13 @@ function renderPlantSummary() {
                 <span>${info.emoji}</span>
                 <span>${info.displayName}</span>
                 <span class="summary-qty">×${g.ids.length}</span>
-                <button class="summary-del" title="Remove all ${info.displayName}" onclick="deleteGroup('${g.crop}','${g.variety}')">🗑️</button>
+                ${canEdit() ? `<button class="summary-del" title="Remove all ${info.displayName}" onclick="deleteGroup('${g.crop}','${g.variety}')">🗑️</button>` : ''}
             </div>`;
         }).join("");
 }
 
 function deleteGroup(crop, variety) {
+    if (!canEdit()) return;
     if (!currentBedId) return;
     const bed = DATA.beds[currentBedId];
     if (!bed.plants) return;
@@ -923,6 +1021,7 @@ function deleteGroup(crop, variety) {
 
 /* ─── Rename bed ─── */
 function startRenameBed() {
+    if (!canEdit()) return;
     const el = document.getElementById("bedTitle");
     const cur = el.textContent;
     const inp = document.createElement("input");
@@ -951,6 +1050,7 @@ function exportData() {
 }
 
 function importData(ev) {
+    if (!canEdit()) { alert("You don't have edit access"); return; }
     const f = ev.target.files[0]; if (!f) return;
     const r = new FileReader();
     r.onload = e => {
@@ -971,6 +1071,7 @@ function importData(ev) {
 }
 
 function resetData() {
+    if (!canEdit()) return;
     if (!confirm("Reset ALL garden data? This cannot be undone.")) return;
     const fresh = defaultBeds();
     bedsRef.set(fresh);
