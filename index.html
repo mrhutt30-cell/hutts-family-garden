@@ -88,6 +88,21 @@ header h1 .leaf{color:#d4a843}
 .map-bed.finder-dim{opacity:.25;filter:grayscale(.5)}
 @keyframes finderPulse{0%,100%{box-shadow:0 0 8px 2px rgba(212,168,67,.3)}50%{box-shadow:0 0 20px 8px rgba(212,168,67,.6)}}
 .map-bed.finder-pulse{animation:finderPulse 1s ease-in-out 3;border-color:#d4a843!important;z-index:25!important}
+/* Highlight count badge */
+.highlight-badge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(30,28,26,.92);color:#d4a843;font-size:1.3rem;font-weight:700;padding:.6rem 1.4rem;border-radius:14px;border:2px solid #d4a843;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s}
+.highlight-badge.show{opacity:1}
+/* Plant edit modal */
+.plant-edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.plant-edit-form{background:#2a2725;border:2px solid #3a3530;border-radius:14px;padding:1.2rem;width:100%;max-width:340px}
+.plant-edit-form h3{font-size:1rem;margin-bottom:.8rem;color:#d4a843}
+.pef-row{margin-bottom:.6rem}
+.pef-row label{display:block;font-size:.75rem;color:#9a8a75;margin-bottom:.2rem;font-weight:600}
+.pef-row input,.pef-row select{width:100%;padding:.5rem;background:#1e1c1a;border:1px solid #3a3530;border-radius:8px;color:#ede6d3;font-size:.9rem}
+.pef-row input:focus,.pef-row select:focus{outline:none;border-color:#d4a843}
+.pef-btns{display:flex;gap:.5rem;margin-top:.8rem}
+.pef-btns button{flex:1;padding:.5rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;min-height:40px}
+.pef-save{background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a}
+.pef-cancel{background:#3a3530;color:#9a8a75}
 
 /* ═══════ BED EDITOR ═══════ */
 #bedEditor{position:fixed;inset:0;background:#1e1c1a;z-index:1000;display:none;flex-direction:column;overflow:hidden}
@@ -135,6 +150,7 @@ header h1 .leaf{color:#d4a843}
 .plant-circle.dragging{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:100;transition:none;transform:translate(-50%,-50%) scale(1.15)}
 .plant-circle.selected-plant{outline:3px solid #d4a843;outline-offset:2px;z-index:50;box-shadow:0 0 12px rgba(212,168,67,0.3)}
 .plant-delete-btn{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#5a2a1a;color:#c09a8a;border:2px solid #6a3a28;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200;line-height:1}
+.plant-edit-btn{position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:#2a3a2a;color:#d4a843;border:2px solid #3a4a3a;font-size:.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200;line-height:1}
 
 /* Plant summary (bottom list) */
 .plant-summary{flex-shrink:0;max-height:30vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#2a2725;border-top:2px solid #3a3530;padding:.5rem .8rem}
@@ -327,6 +343,38 @@ header h1 .leaf{color:#d4a843}
         </div>
     </div>
 </div>
+
+<!-- Plant edit modal -->
+<div class="plant-edit-modal" id="plantEditModal" style="display:none">
+    <div class="plant-edit-form">
+        <h3>✏️ Edit Plant</h3>
+        <div class="pef-row"><label>Crop type</label><input type="text" id="pefCrop" placeholder="e.g. Tomato"></div>
+        <div class="pef-row"><label>Variety</label><input type="text" id="pefVariety" placeholder="e.g. Super Sweet 100"></div>
+        <div class="pef-row"><label>Category</label>
+            <select id="pefCat">
+                <option value="Fruit Veg">Fruit Veg</option>
+                <option value="Allium">Allium</option>
+                <option value="Leafy Green">Leafy Green</option>
+                <option value="Root Veg">Root Veg</option>
+                <option value="Herb">Herb</option>
+                <option value="Legume">Legume</option>
+                <option value="Brassica">Brassica</option>
+                <option value="Cucurbit">Cucurbit</option>
+                <option value="Fruit">Fruit</option>
+                <option value="Flower">Flower</option>
+                <option value="Tree">Tree</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="pef-btns">
+            <button class="pef-cancel" onclick="closePlantEditModal()">Cancel</button>
+            <button class="pef-save" onclick="savePlantEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Highlight count badge -->
+<div class="highlight-badge" id="highlightBadge"></div>
 
 <!-- Data bar -->
 <div class="data-bar">
@@ -959,11 +1007,12 @@ function finderLocate(plantKey) {
         return;
     }
 
-    highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
+    const info = findPlant(crop, variety);
+    const count = highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
+    showHighlightBadge(info.displayName, count);
 }
 
 function legendLocate(plantKey) {
-    // Toggle — clicking same legend item again clears
     if (finderHighlightKey === plantKey) {
         finderHighlightKey = null;
         clearFinderHighlight();
@@ -971,11 +1020,14 @@ function legendLocate(plantKey) {
     }
     finderHighlightKey = plantKey;
     const [crop, variety] = plantKey.split("|");
-    highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
+    const info = findPlant(crop, variety);
+    const count = highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
+    showHighlightBadge(info.displayName, count);
 }
 
 function highlightBedsByCrop(cropName) {
-    highlightDots(dot => dot.dataset.crop === cropName);
+    const count = highlightDots(dot => dot.dataset.crop === cropName);
+    showHighlightBadge(cropName, count);
 }
 
 function highlightDots(matchFn) {
@@ -983,12 +1035,12 @@ function highlightDots(matchFn) {
     mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
     const allDots = mapEl.querySelectorAll(".map-dot");
-    let hasMatch = false;
+    let matchCount = 0;
     allDots.forEach(dot => {
         dot.classList.remove("dot-highlight", "dot-dim");
         if (matchFn(dot)) {
             dot.classList.add("dot-highlight");
-            hasMatch = true;
+            matchCount++;
         } else {
             dot.classList.add("dot-dim");
         }
@@ -999,10 +1051,12 @@ function highlightDots(matchFn) {
     allBeds.forEach(el => {
         el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
         const hasDot = el.querySelector(".dot-highlight");
-        if (!hasDot && hasMatch) {
+        if (!hasDot && matchCount) {
             el.classList.add("finder-dim");
         }
     });
+
+    return matchCount;
 }
 
 function clearFinderHighlight() {
@@ -1329,7 +1383,7 @@ function renderBedCanvas() {
         el.innerHTML = `<span>${info.emoji}</span>`;
         el.title = info.displayName;
 
-        // Delete button for selected plant (editors only)
+        // Delete and edit buttons for selected plant (editors only)
         if (id === selectedPlantId && canEdit()) {
             const del = document.createElement("div");
             del.className = "plant-delete-btn";
@@ -1340,6 +1394,16 @@ function renderBedCanvas() {
                 deletePlant(currentBedId, id);
             });
             el.appendChild(del);
+
+            const edit = document.createElement("div");
+            edit.className = "plant-edit-btn";
+            edit.textContent = "✎";
+            edit.addEventListener("pointerdown", e => {
+                e.stopPropagation();
+                e.preventDefault();
+                openPlantEditModal(currentBedId, id);
+            });
+            el.appendChild(edit);
         }
 
         // Pointer events for drag
@@ -1564,7 +1628,8 @@ function renderPlantSummary() {
                 <span>${info.emoji}</span>
                 <span>${info.displayName}</span>
                 <span class="summary-qty">×${g.ids.length}</span>
-                ${canEdit() ? `<button class="summary-del" title="Remove all ${info.displayName}" onclick="deleteGroup('${g.crop}','${g.variety}')">🗑️</button>` : ''}
+                ${canEdit() ? `<button class="summary-del" title="Edit ${info.displayName}" onclick="openPlantEditModal('${currentBedId}','${g.ids[0]}','${g.crop.replace(/'/g,"\\'")}','${g.variety.replace(/'/g,"\\'")}')">✏️</button>` : ''}
+                ${canEdit() ? `<button class="summary-del" title="Remove all ${info.displayName}" onclick="deleteGroup('${g.crop.replace(/'/g,"\\'")}','${g.variety.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
             </div>`;
         }).join("");
 }
@@ -1590,6 +1655,98 @@ function deleteGroup(crop, variety) {
     if (selectedPlantId && !bed.plants[selectedPlantId]) selectedPlantId = null;
     renderBedCanvas();
     renderPlantSummary();
+}
+
+/* ─── Plant Edit Modal ─── */
+let editingPlantBed = null;
+let editingPlantOldCrop = null;
+let editingPlantOldVariety = null;
+
+function openPlantEditModal(bedId, plantId, oldCrop, oldVariety) {
+    // If called from summary, oldCrop/oldVariety are passed; from canvas button, look them up
+    const bed = DATA.beds[bedId];
+    if (!bed || !bed.plants) return;
+
+    if (!oldCrop) {
+        const p = bed.plants[plantId];
+        if (!p) return;
+        oldCrop = p.crop;
+        oldVariety = p.variety;
+    }
+
+    editingPlantBed = bedId;
+    editingPlantOldCrop = oldCrop;
+    editingPlantOldVariety = oldVariety;
+
+    document.getElementById('pefCrop').value = oldCrop;
+    document.getElementById('pefVariety').value = oldVariety;
+
+    // Try to guess current category
+    const info = findPlant(oldCrop, oldVariety);
+    const catSel = document.getElementById('pefCat');
+    catSel.value = info.cat || 'Other';
+
+    document.getElementById('plantEditModal').style.display = 'flex';
+}
+
+function closePlantEditModal() {
+    document.getElementById('plantEditModal').style.display = 'none';
+    editingPlantBed = null;
+}
+
+function savePlantEdit() {
+    if (!canEdit() || !editingPlantBed) return;
+    const newCrop = document.getElementById('pefCrop').value.trim();
+    const newVariety = document.getElementById('pefVariety').value.trim();
+    const newCat = document.getElementById('pefCat').value;
+
+    if (!newCrop) { alert('Crop name is required'); return; }
+
+    const bed = DATA.beds[editingPlantBed];
+    if (!bed || !bed.plants) { closePlantEditModal(); return; }
+
+    // Update ALL plants in this bed with the old crop+variety to the new values
+    const updates = {};
+    Object.entries(bed.plants).forEach(([id, p]) => {
+        if (p.crop === editingPlantOldCrop && p.variety === editingPlantOldVariety) {
+            p.crop = newCrop;
+            p.variety = newVariety || 'Standard';
+            updates[`${id}/crop`] = p.crop;
+            updates[`${id}/variety`] = p.variety;
+        }
+    });
+
+    if (Object.keys(updates).length) {
+        bedsRef.child(`${editingPlantBed}/plants`).update(updates);
+    }
+
+    // Ensure a matching plant definition exists (add as custom if needed)
+    const existing = getAllPlants().find(p => p.crop === newCrop && p.variety === (newVariety || 'Standard'));
+    if (!existing) {
+        const color = catColors[newCat] || '#66bb6a';
+        const emoji = catEmojis[newCat] || '🌱';
+        const cp = {
+            crop: newCrop, variety: newVariety || 'Standard',
+            displayName: (newVariety && newVariety !== 'Standard') ? `${newVariety} ${newCrop}` : newCrop,
+            emoji, color, cat: newCat,
+            _search: `${newCrop} ${newVariety} ${newCat}`.toLowerCase()
+        };
+        db.ref('gardens/hutts-family-garden/customPlants').push(cp);
+    }
+
+    closePlantEditModal();
+    renderBedCanvas();
+    renderPlantSummary();
+}
+
+/* ─── Highlight Count Badge ─── */
+let badgeTimer = null;
+function showHighlightBadge(name, count) {
+    const badge = document.getElementById('highlightBadge');
+    badge.textContent = `${name} — ${count} found`;
+    badge.classList.add('show');
+    clearTimeout(badgeTimer);
+    badgeTimer = setTimeout(() => badge.classList.remove('show'), 2500);
 }
 
 /* ─── Rename bed ─── */
