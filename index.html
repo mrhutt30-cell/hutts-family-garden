@@ -56,6 +56,36 @@ header h1 .leaf{color:#d4a843}
 .leg-item{display:flex;align-items:center;gap:.3rem;font-size:.75rem;background:#2a2725;padding:.2rem .6rem;border-radius:12px;box-shadow:0 1px 3px var(--shadow);color:#ede6d3;border:1px solid #3a3530}
 .leg-sw{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 
+/* Plant Finder */
+.finder-wrap{max-width:1000px;margin:.8rem auto;padding:0 .8rem}
+.finder-toggle{display:flex;align-items:center;justify-content:center;gap:.4rem;background:#2a2725;border:1px solid #3a3530;color:#d4a843;padding:.45rem .9rem;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;transition:background .2s,border-color .2s}
+.finder-toggle:hover{background:#332f2b;border-color:#d4a843}
+.finder-toggle.active{background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a;border-color:#d4a843}
+.finder-body{display:none;margin-top:.6rem}
+.finder-body.open{display:block}
+.finder-search{width:100%;padding:.5rem .8rem;background:#1e1c1a;border:1px solid #3a3530;border-radius:8px;color:#ede6d3;font-size:.85rem;margin-bottom:.6rem}
+.finder-search::placeholder{color:#9a8a75}
+.finder-search:focus{outline:none;border-color:#d4a843}
+.finder-cats{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.7rem}
+.finder-cat{padding:.3rem .7rem;border-radius:16px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid #3a3530;background:#2a2725;color:#ede6d3;transition:all .2s}
+.finder-cat:hover{border-color:#d4a843;color:#d4a843}
+.finder-cat.active{background:#d4a843;color:#1e1c1a;border-color:#d4a843}
+.finder-cat .cat-count{font-weight:400;opacity:.7;margin-left:.2rem;font-size:.7rem}
+.finder-list{display:flex;flex-direction:column;gap:.3rem;max-height:50vh;overflow-y:auto}
+.finder-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .7rem;background:#2a2725;border-radius:8px;cursor:pointer;border:1.5px solid transparent;transition:all .2s}
+.finder-item:hover{border-color:#d4a843;background:#332f2b}
+.finder-item.highlighted{border-color:#d4a843;background:rgba(212,168,67,.12)}
+.finder-item .fi-sw{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.finder-item .fi-name{font-size:.82rem;color:#ede6d3;flex:1}
+.finder-item .fi-beds{font-size:.72rem;color:#9a8a75;white-space:nowrap}
+.finder-item .fi-count{font-size:.78rem;font-weight:700;color:#d4a843;min-width:1.6rem;text-align:right}
+.finder-none{text-align:center;color:#9a8a75;font-size:.82rem;padding:1rem}
+/* Map highlight for finder */
+.map-bed.finder-glow{border-color:#d4a843!important;box-shadow:0 0 14px 4px rgba(212,168,67,.45)!important;z-index:25!important}
+.map-bed.finder-dim{opacity:.25;filter:grayscale(.5)}
+@keyframes finderPulse{0%,100%{box-shadow:0 0 8px 2px rgba(212,168,67,.3)}50%{box-shadow:0 0 20px 8px rgba(212,168,67,.6)}}
+.map-bed.finder-pulse{animation:finderPulse 1s ease-in-out 3;border-color:#d4a843!important;z-index:25!important}
+
 /* ═══════ BED EDITOR ═══════ */
 #bedEditor{position:fixed;inset:0;background:#1e1c1a;z-index:1000;display:none;flex-direction:column;overflow:hidden}
 .ed-header{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;padding-top:calc(env(safe-area-inset-top,0px) + .8rem);background:linear-gradient(135deg,#1a3a20 0%,#22432a 30%,#2a1808 100%);color:#ede6d3;flex-shrink:0}
@@ -184,6 +214,7 @@ header h1 .leaf{color:#d4a843}
 .edit-layout-btn.active{background:#d4a843;color:#1e1c1a}
 .bed-resize-handle{position:absolute;bottom:0;right:0;width:12px;height:12px;background:#d4a843;cursor:nwse-resize;z-index:30;border-radius:2px 0 4px 0}
 .bed-delete-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#5a2a1a;color:#c09a8a;border:1.5px solid #6a3a28;font-size:.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:30}
+.bed-rotate-btn{position:absolute;top:-6px;left:-6px;width:18px;height:18px;border-radius:50%;background:#2a3a2a;color:#d4a843;border:1.5px solid #3a4a3a;font-size:.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:30}
 .garden-map.layout-editing{overflow:visible;touch-action:none}
 .garden-map.layout-editing .map-bed:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 </style>
@@ -228,6 +259,16 @@ header h1 .leaf{color:#d4a843}
         <button onclick="addNewBed()">➕ Add</button>
     </div>
     <div class="legend" id="mapLegend"></div>
+</div>
+
+<!-- ═══════ PLANT FINDER ═══════ -->
+<div class="finder-wrap" id="finderWrap">
+    <button class="finder-toggle" id="finderToggle" onclick="toggleFinder()">🔎 Find My Plants</button>
+    <div class="finder-body" id="finderBody">
+        <input type="text" class="finder-search" id="finderSearch" placeholder="Search your planted items…" oninput="renderFinder()">
+        <div class="finder-cats" id="finderCats"></div>
+        <div class="finder-list" id="finderList"></div>
+    </div>
 </div>
 
 <!-- ═══════ BED EDITOR ═══════ -->
@@ -575,7 +616,7 @@ layoutRef.on('value', snap => {
     if (val) {
         BEDS = Object.values(val).map(b => ({
             id: b.id, name: b.name, type: b.type,
-            mapPos: { left: b.mapPos.left, top: b.mapPos.top, w: b.mapPos.w, h: b.mapPos.h }
+            mapPos: { left: b.mapPos.left, top: b.mapPos.top, w: b.mapPos.w, h: b.mapPos.h, rotation: b.mapPos.rotation || 0 }
         }));
     } else {
         // First time — save default layout to Firebase
@@ -607,6 +648,7 @@ bedsRef.on('value', snap => {
     renderStats();
     if (currentBedId) renderBedCanvas();
     if (currentBedId) renderPlantSummary();
+    if (finderOpen) renderFinder();
 });
 
 // Also try to load from localStorage for migration
@@ -701,6 +743,7 @@ function renderMap() {
         el.style.top = def.mapPos.top + "%";
         el.style.width = def.mapPos.w + "%";
         el.style.height = def.mapPos.h + "%";
+        if (def.mapPos.rotation) el.style.transform = `rotate(${def.mapPos.rotation}deg)`;
 
         // Render plant dots
         if (bed && bed.plants) {
@@ -737,6 +780,17 @@ function renderMap() {
                 deleteBed(def.id);
             });
             el.appendChild(delBtn);
+
+            // Rotate button
+            const rotBtn = document.createElement("div");
+            rotBtn.className = "bed-rotate-btn";
+            rotBtn.textContent = "↻";
+            rotBtn.addEventListener("pointerdown", e => {
+                e.stopPropagation();
+                e.preventDefault();
+                rotateBed(def);
+            });
+            el.appendChild(rotBtn);
 
             // Drag to move
             el.addEventListener("pointerdown", e => startBedDrag(e, def));
@@ -785,6 +839,186 @@ function renderLegend() {
     if (!used.size) { el.innerHTML = '<span style="color:#9e9e9e;font-size:.8rem">Plant something to see the legend</span>'; return; }
     el.innerHTML = Array.from(used.values()).sort((a, b) => a.displayName.localeCompare(b.displayName))
         .map(p => `<div class="leg-item"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
+}
+
+/* ═══════════════════════════════════════════════
+   PLANT FINDER
+   ═══════════════════════════════════════════════ */
+let finderOpen = false;
+let finderActiveCat = null;
+let finderHighlightKey = null;
+
+function toggleFinder() {
+    finderOpen = !finderOpen;
+    document.getElementById("finderToggle").classList.toggle("active", finderOpen);
+    document.getElementById("finderBody").classList.toggle("open", finderOpen);
+    if (finderOpen) {
+        renderFinder();
+        document.getElementById("finderSearch").focus();
+    } else {
+        clearFinderHighlight();
+        finderActiveCat = null;
+        finderHighlightKey = null;
+    }
+}
+
+function getPlantedInventory() {
+    const inv = new Map();
+    Object.entries(DATA.beds).forEach(([bedId, bed]) => {
+        if (!bed || !bed.plants) return;
+        Object.values(bed.plants).forEach(p => {
+            const key = p.crop + "|" + p.variety;
+            if (!inv.has(key)) {
+                const info = findPlant(p.crop, p.variety);
+                inv.set(key, { key, crop: p.crop, variety: p.variety, info, count: 0, beds: new Set() });
+            }
+            const entry = inv.get(key);
+            entry.count++;
+            const bedDef = BEDS.find(b => b.id === bedId);
+            const bedData = DATA.beds[bedId];
+            entry.beds.add(bedData?.name || bedDef?.name || bedId);
+        });
+    });
+    return Array.from(inv.values()).sort((a, b) => a.info.displayName.localeCompare(b.info.displayName));
+}
+
+function getFinderCategories(inventory) {
+    const cats = new Map();
+    inventory.forEach(item => {
+        const c = item.crop;
+        if (!cats.has(c)) cats.set(c, { name: c, count: 0 });
+        cats.get(c).count += item.count;
+    });
+    return Array.from(cats.values()).sort((a, b) => b.count - a.count);
+}
+
+function renderFinder() {
+    const inventory = getPlantedInventory();
+    const cats = getFinderCategories(inventory);
+    const q = (document.getElementById("finderSearch").value || "").toLowerCase().trim();
+
+    // Render category pills
+    const catsEl = document.getElementById("finderCats");
+    catsEl.innerHTML = cats.map(c =>
+        `<div class="finder-cat${finderActiveCat === c.name ? ' active' : ''}" onclick="toggleFinderCat('${c.name.replace(/'/g, "\\'")}')">${c.name}<span class="cat-count">×${c.count}</span></div>`
+    ).join("");
+
+    // Filter inventory
+    let filtered = inventory;
+    if (finderActiveCat) {
+        filtered = filtered.filter(i => i.crop === finderActiveCat);
+    }
+    if (q) {
+        filtered = filtered.filter(i =>
+            i.info.displayName.toLowerCase().includes(q) ||
+            i.crop.toLowerCase().includes(q) ||
+            i.variety.toLowerCase().includes(q)
+        );
+    }
+
+    const listEl = document.getElementById("finderList");
+    if (!filtered.length) {
+        listEl.innerHTML = `<div class="finder-none">${inventory.length ? 'No matches' : 'No plants placed yet — tap a bed to start!'}</div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(item =>
+        `<div class="finder-item${finderHighlightKey === item.key ? ' highlighted' : ''}" onclick="finderLocate('${item.key.replace(/'/g, "\\'")}')">` +
+        `<div class="fi-sw" style="background:${item.info.color}"></div>` +
+        `<span class="fi-name">${item.info.emoji} ${item.info.displayName}</span>` +
+        `<span class="fi-beds">${Array.from(item.beds).join(', ')}</span>` +
+        `<span class="fi-count">×${item.count}</span>` +
+        `</div>`
+    ).join("");
+}
+
+function toggleFinderCat(catName) {
+    finderActiveCat = finderActiveCat === catName ? null : catName;
+    renderFinder();
+    // Highlight all beds with this category
+    if (finderActiveCat) {
+        finderHighlightKey = null;
+        highlightBedsByCrop(finderActiveCat);
+    } else {
+        clearFinderHighlight();
+    }
+}
+
+function finderLocate(plantKey) {
+    const [crop, variety] = plantKey.split("|");
+    finderHighlightKey = finderHighlightKey === plantKey ? null : plantKey;
+    renderFinder();
+
+    if (!finderHighlightKey) {
+        clearFinderHighlight();
+        return;
+    }
+
+    // Find which beds contain this exact plant
+    const matchBedIds = new Set();
+    Object.entries(DATA.beds).forEach(([bedId, bed]) => {
+        if (!bed || !bed.plants) return;
+        Object.values(bed.plants).forEach(p => {
+            if (p.crop === crop && p.variety === variety) matchBedIds.add(bedId);
+        });
+    });
+
+    // Scroll map into view
+    const mapEl = document.getElementById("gardenMap");
+    mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Highlight matching beds, dim others
+    const allBeds = mapEl.querySelectorAll(".map-bed");
+    allBeds.forEach((el, i) => {
+        const def = BEDS[i];
+        if (!def) return;
+        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
+        if (matchBedIds.has(def.id)) {
+            el.classList.add("finder-pulse");
+        } else {
+            el.classList.add("finder-dim");
+        }
+    });
+
+    // Clear pulse after animation
+    setTimeout(() => {
+        allBeds.forEach(el => {
+            el.classList.remove("finder-pulse");
+            if (el.classList.contains("finder-dim")) return;
+            el.classList.add("finder-glow");
+        });
+    }, 3100);
+}
+
+function highlightBedsByCrop(cropName) {
+    const matchBedIds = new Set();
+    Object.entries(DATA.beds).forEach(([bedId, bed]) => {
+        if (!bed || !bed.plants) return;
+        Object.values(bed.plants).forEach(p => {
+            if (p.crop === cropName) matchBedIds.add(bedId);
+        });
+    });
+
+    const mapEl = document.getElementById("gardenMap");
+    mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    const allBeds = mapEl.querySelectorAll(".map-bed");
+    allBeds.forEach((el, i) => {
+        const def = BEDS[i];
+        if (!def) return;
+        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
+        if (matchBedIds.has(def.id)) {
+            el.classList.add("finder-glow");
+        } else {
+            el.classList.add("finder-dim");
+        }
+    });
+}
+
+function clearFinderHighlight() {
+    document.querySelectorAll(".map-bed").forEach(el => {
+        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
+    });
 }
 
 /* ═══════════════════════════════════════════════
@@ -1483,9 +1717,16 @@ function deleteBed(bedId) {
     bedsRef.child(bedId).remove();
 }
 
+function rotateBed(def) {
+    if (!canEdit()) return;
+    const cur = def.mapPos.rotation || 0;
+    def.mapPos.rotation = (cur + 90) % 360;
+    layoutRef.child(def.id).update({ mapPos: { ...def.mapPos } });
+}
+
 function startBedDrag(e, def) {
     if (!layoutEditMode || !canEdit()) return;
-    if (e.target.classList.contains('bed-resize-handle') || e.target.classList.contains('bed-delete-btn')) return;
+    if (e.target.classList.contains('bed-resize-handle') || e.target.classList.contains('bed-delete-btn') || e.target.classList.contains('bed-rotate-btn')) return;
     e.preventDefault();
     e.stopPropagation();
 
