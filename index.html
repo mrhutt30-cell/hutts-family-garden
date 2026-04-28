@@ -1112,8 +1112,8 @@ function renderPalette(filter, skipApiTrigger) {
         }).join("");
     }
 
-    // Show searching indicator while API call is in progress
-    if (apiSearching && q && q.length >= 2 && PERENUAL_KEY) {
+    // Show searching indicator while online search is in progress
+    if (apiSearching && q && q.length >= 2) {
         html += `<div class="pal-divider pal-searching">🔍 Searching online…</div>`;
     }
 
@@ -1153,13 +1153,13 @@ function renderPalette(filter, skipApiTrigger) {
         });
     });
 
-    // Trigger API search after debounce (only from user input, not from API callback)
-    if (!skipApiTrigger && q && q.length >= 2 && PERENUAL_KEY) {
+    // Trigger online search after debounce (only from user input, not from API callback)
+    if (!skipApiTrigger && q && q.length >= 2) {
         clearTimeout(apiSearchTimeout);
         apiSearchTimeout = setTimeout(() => {
             apiSearching = true;
             renderPalette(document.getElementById("palSearch").value, true);
-            searchPlantsAPI(q);
+            searchPlantsOnline(q);
         }, 400);
     } else if (!q) {
         apiResults = [];
@@ -1167,39 +1167,37 @@ function renderPalette(filter, skipApiTrigger) {
     }
 }
 
-/* ─── Perenual API Search (needs free key from perenual.com) ─── */
-const PERENUAL_KEY = 'sk-J6h669f0cdebe018616821';
+/* ─── Wikipedia-powered Plant Search (free, no API key) ─── */
 let apiSearchError = '';
-async function searchPlantsAPI(query) {
-    if (!PERENUAL_KEY) return;
+async function searchPlantsOnline(query) {
     apiSearchError = '';
     try {
-        const resp = await fetch(`https://perenual.com/api/species-list?key=${PERENUAL_KEY}&q=${encodeURIComponent(query)}`);
+        // Use Wikipedia opensearch for clean name suggestions
+        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=15&namespace=0&format=json&origin=*`;
+        const resp = await fetch(url);
         if (!resp.ok) {
-            const body = await resp.json().catch(() => ({}));
-            if (resp.status === 429 || body['X-RateLimit-Exceeded']) {
-                apiSearchError = '⚠️ Daily API limit reached — use "Add custom plant" instead';
-            } else {
-                apiSearchError = '⚠️ Online search unavailable';
-            }
+            apiSearchError = '⚠️ Online search unavailable';
             apiSearching = false;
             renderPalette(document.getElementById("palSearch").value, true);
             return;
         }
         const data = await resp.json();
-        if (data['X-RateLimit-Exceeded']) {
-            apiSearchError = '⚠️ Daily API limit reached — use "Add custom plant" instead';
-            apiSearching = false;
-            renderPalette(document.getElementById("palSearch").value, true);
-            return;
-        }
+        const names = data[1] || [];
         const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
-        apiResults = (data.data || []).slice(0, 8)
-            .filter(sp => sp.common_name && !existing.has(sp.common_name.toLowerCase()))
-            .map((sp, i) => {
-                const name = sp.common_name;
-                const cycle = sp.cycle || '';
-                const cat = guessCategory(name, cycle);
+
+        // Filter to plant/garden-relevant results
+        const plantWords = /plant|fruit|vegetable|herb|flower|tree|shrub|vine|grass|fern|berry|seed|leaf|garden|cultivar|species|genus|crop|tomato|pepper|onion|apple|melon|squash|bean|pea|corn|lettuce|potato|carrot|beet|radish|cucumber|basil|mint|rose|lily|oak|maple/i;
+        apiResults = names
+            .filter(name => {
+                const low = name.toLowerCase();
+                // Skip disambiguation, lists, film, etc.
+                if (/\(disambiguation\)|\(film\)|\(band\)|\(album\)|\(song\)|list of/i.test(name)) return false;
+                if (existing.has(low)) return false;
+                return true;
+            })
+            .slice(0, 8)
+            .map((name, i) => {
+                const cat = guessCategory(name, '');
                 const color = catColors[cat] || '#66bb6a';
                 const emoji = catEmojis[cat] || '🌱';
                 return {
@@ -1208,8 +1206,8 @@ async function searchPlantsAPI(query) {
                     _apiIdx: i, _fromAPI: true
                 };
             });
+
         apiSearching = false;
-        apiSearchError = '';
         const q = document.getElementById("palSearch").value;
         if (q) renderPalette(q, true);
     } catch(e) {
