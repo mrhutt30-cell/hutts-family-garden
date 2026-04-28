@@ -276,6 +276,7 @@ header h1 .leaf{color:#d4a843}
         <input type="text" id="newBedName" placeholder="Bed name…" style="flex:1;min-width:100px">
         <input type="text" id="newBedCustomType" placeholder="Custom type name…" style="display:none;min-width:100px">
         <button onclick="addNewBed()">➕ Add</button>
+        <button onclick="fixBedOverlaps()" style="background:#2a2725;color:#c09a8a;border:1px solid #3a3530">⚠️ Fix Overlaps</button>
     </div>
     <div class="legend" id="mapLegend"></div>
 </div>
@@ -1934,18 +1935,85 @@ function addNewBed() {
 
     const id = genId();
     const sizes = BED_DEFAULT_SIZES[type] || BED_DEFAULT_SIZES.ground;
+    const pos = findOpenBedSpot(50, 50, sizes.w, sizes.h);
     const newBed = {
         id, name, type,
-        mapPos: { left: Math.round(50 - sizes.w / 2), top: Math.round(50 - sizes.h / 2), w: sizes.w, h: sizes.h }
+        mapPos: { left: pos.left, top: pos.top, w: sizes.w, h: sizes.h }
     };
 
-    // Save to layout
     layoutRef.child(id).set(newBed);
-    // Create bed data entry
     bedsRef.child(id).set({ name, plants: {} });
 
     document.getElementById('newBedName').value = '';
     document.getElementById('newBedCustomType').value = '';
+}
+
+function bedsOverlap(a, b) {
+    // Check if two bed rectangles overlap (with 1% padding)
+    const pad = 1;
+    return !(a.left + a.w + pad <= b.left || b.left + b.w + pad <= a.left ||
+             a.top + a.h + pad <= b.top || b.top + b.h + pad <= a.top);
+}
+
+function findOpenBedSpot(cx, cy, w, h) {
+    const candidate = { left: Math.round(cx - w / 2), top: Math.round(cy - h / 2), w, h };
+    const taken = BEDS.map(b => b.mapPos);
+
+    if (!taken.some(t => bedsOverlap(candidate, t))) return candidate;
+
+    // Spiral outward
+    for (let r = 5; r < 80; r += 4) {
+        for (let a = 0; a < 360; a += 20) {
+            const nl = Math.round(cx - w / 2 + r * Math.cos(a * Math.PI / 180));
+            const nt = Math.round(cy - h / 2 + r * Math.sin(a * Math.PI / 180));
+            if (nl < 1 || nl + w > 99 || nt < 8 || nt + h > 98) continue;
+            const c2 = { left: nl, top: nt, w, h };
+            if (!taken.some(t => bedsOverlap(c2, t))) return c2;
+        }
+    }
+    return candidate;
+}
+
+function fixBedOverlaps() {
+    if (!canEdit()) return;
+    const placed = [];
+    const updates = {};
+
+    BEDS.forEach(def => {
+        const cur = { left: def.mapPos.left, top: def.mapPos.top, w: def.mapPos.w, h: def.mapPos.h };
+        let needsMove = placed.some(p => bedsOverlap(cur, p));
+
+        if (needsMove) {
+            // Find open spot near current position
+            for (let r = 3; r < 80; r += 3) {
+                let found = false;
+                for (let a = 0; a < 360; a += 15) {
+                    const nl = Math.round(cur.left + r * Math.cos(a * Math.PI / 180));
+                    const nt = Math.round(cur.top + r * Math.sin(a * Math.PI / 180));
+                    if (nl < 1 || nl + cur.w > 99 || nt < 8 || nt + cur.h > 98) continue;
+                    const c2 = { left: nl, top: nt, w: cur.w, h: cur.h };
+                    if (!placed.some(p => bedsOverlap(c2, p))) {
+                        def.mapPos.left = nl;
+                        def.mapPos.top = nt;
+                        updates[def.id] = { mapPos: { ...def.mapPos } };
+                        placed.push(c2);
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+            if (!updates[def.id]) placed.push(cur);
+        } else {
+            placed.push(cur);
+        }
+    });
+
+    if (Object.keys(updates).length) {
+        Object.entries(updates).forEach(([id, data]) => layoutRef.child(id).update(data));
+    } else {
+        alert('No overlapping beds found!');
+    }
 }
 
 function deleteBed(bedId) {
