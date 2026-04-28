@@ -80,11 +80,16 @@ header h1 .leaf{color:var(--green-light)}
 .pal-cat{font-size:.7rem;color:var(--text-light)}
 
 /* Bulk controls */
-.bulk-row{display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-top:2px solid #e0e0e0;flex-shrink:0;background:#fafafa}
+.bulk-row{display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-top:2px solid #e0e0e0;flex-shrink:0;background:#fafafa;flex-wrap:wrap}
 .bulk-row label{font-size:.8rem;font-weight:600;color:var(--text-light)}
 .bulk-row input[type="number"]{width:55px;padding:.3rem;border:1px solid #ccc;border-radius:6px;font-size:.9rem;text-align:center}
+.bulk-row select{padding:.3rem .4rem;border:1px solid #ccc;border-radius:6px;font-size:.82rem;background:var(--white)}
 .bulk-btn{flex:1;padding:.45rem .5rem;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:40px}
 .bulk-btn:active{background:var(--green-dark)}
+.bulk-pos{display:flex;align-items:center;gap:.3rem;width:100%;margin-top:.2rem}
+.bulk-pos label{font-size:.75rem;white-space:nowrap}
+.bulk-pos input[type="range"]{flex:1;accent-color:var(--green-mid)}
+.bulk-pos .pos-val{font-size:.75rem;min-width:32px;text-align:center;color:var(--green-dark);font-weight:600}
 
 /* Bed canvas */
 .canvas-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;min-width:0;overflow:auto;background:#e8f5e9}
@@ -167,7 +172,17 @@ header h1 .leaf{color:var(--green-light)}
             <div class="bulk-row">
                 <label>Qty:</label>
                 <input type="number" id="bulkQty" value="1" min="1" max="99">
-                <button class="bulk-btn" onclick="bulkPlace()">Place in Grid</button>
+                <select id="bulkPattern" onchange="updateBulkUI()">
+                    <option value="grid">Grid</option>
+                    <option value="row">Horiz. Row</option>
+                    <option value="col">Vert. Column</option>
+                </select>
+                <button class="bulk-btn" onclick="bulkPlace()">Place</button>
+                <div class="bulk-pos" id="bulkPosWrap" style="display:none">
+                    <label id="bulkPosLabel">Y position:</label>
+                    <input type="range" id="bulkPos" min="5" max="95" value="50" oninput="document.getElementById('bulkPosVal').textContent=this.value+'%'">
+                    <span class="pos-val" id="bulkPosVal">50%</span>
+                </div>
             </div>
         </div>
         <div class="canvas-wrap">
@@ -780,7 +795,19 @@ function deletePlant(bedId, plantId) {
     renderPlantSummary();
 }
 
-/* ─── Bulk Place (auto-arrange in grid) ─── */
+/* ─── Bulk Place (structured patterns) ─── */
+function updateBulkUI() {
+    const pattern = document.getElementById("bulkPattern").value;
+    const posWrap = document.getElementById("bulkPosWrap");
+    const posLabel = document.getElementById("bulkPosLabel");
+    if (pattern === "grid") {
+        posWrap.style.display = "none";
+    } else {
+        posWrap.style.display = "flex";
+        posLabel.textContent = pattern === "row" ? "Y position:" : "X position:";
+    }
+}
+
 function bulkPlace() {
     if (!selectedPlant) { alert("Select a plant from the palette first"); return; }
     const qty = Math.min(99, Math.max(1, parseInt(document.getElementById("bulkQty").value) || 1));
@@ -789,20 +816,43 @@ function bulkPlace() {
     const bed = DATA.beds[currentBedId];
     if (!bed.plants) bed.plants = {};
 
-    const cols = Math.ceil(Math.sqrt(qty));
-    const rows = Math.ceil(qty / cols);
+    const pattern = document.getElementById("bulkPattern").value;
+    const pos = parseInt(document.getElementById("bulkPos").value) || 50;
     const updates = {};
     let count = 0;
 
-    for (let r = 0; r < rows && count < qty; r++) {
-        for (let c = 0; c < cols && count < qty; c++) {
+    if (pattern === "row") {
+        // Horizontal line at Y=pos, evenly spaced along X
+        for (let i = 0; i < qty; i++) {
             const id = genId();
-            const x = cols === 1 ? 50 : Math.round((10 + (c / (cols - 1)) * 80) * 10) / 10;
-            const y = rows === 1 ? 50 : Math.round((10 + (r / (rows - 1)) * 80) * 10) / 10;
-            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y };
+            const x = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
+            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y: pos };
             bed.plants[id] = plantData;
             updates[id] = plantData;
-            count++;
+        }
+    } else if (pattern === "col") {
+        // Vertical line at X=pos, evenly spaced along Y
+        for (let i = 0; i < qty; i++) {
+            const id = genId();
+            const y = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
+            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: pos, y };
+            bed.plants[id] = plantData;
+            updates[id] = plantData;
+        }
+    } else {
+        // Grid (original behavior)
+        const cols = Math.ceil(Math.sqrt(qty));
+        const rows = Math.ceil(qty / cols);
+        for (let r = 0; r < rows && count < qty; r++) {
+            for (let c = 0; c < cols && count < qty; c++) {
+                const id = genId();
+                const x = cols === 1 ? 50 : Math.round((10 + (c / (cols - 1)) * 80) * 10) / 10;
+                const y = rows === 1 ? 50 : Math.round((10 + (r / (rows - 1)) * 80) * 10) / 10;
+                const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y };
+                bed.plants[id] = plantData;
+                updates[id] = plantData;
+                count++;
+            }
         }
     }
 
