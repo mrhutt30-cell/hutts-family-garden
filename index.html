@@ -184,6 +184,53 @@ header h1 .leaf{color:#d4a843}
     .pal-panel{max-height:35vh}
     .plant-circle{width:32px;height:32px;font-size:.8rem}
 }
+/* ═══════ DESKTOP ═══════ */
+@media(min-width:1000px){
+    .map-wrap{max-width:1400px}
+    .garden-map{padding-bottom:70%}
+    .map-bed-label{font-size:.55rem}
+    .map-dot{width:8px;height:8px}
+    .legend{max-width:1400px}
+    .finder-wrap{max-width:1400px}
+    .layout-toolbar{max-width:1400px}
+    .pal-panel{width:300px}
+    .bed-canvas{max-width:800px;padding-bottom:min(55%,60vh)}
+    .plant-circle{width:44px;height:44px;font-size:1.1rem}
+    .plant-summary{max-height:35vh}
+}
+@media(min-width:1400px){
+    .map-wrap{max-width:1800px}
+    .garden-map{padding-bottom:65%}
+    .map-bed-label{font-size:.6rem}
+    .legend,.finder-wrap,.layout-toolbar{max-width:1800px}
+}
+/* ═══════ TRACKING TAB ═══════ */
+.ed-tabs{display:flex;background:#22201e;border-bottom:2px solid #3a3530;flex-shrink:0}
+.ed-tab{flex:1;padding:.6rem;background:transparent;border:none;color:#9a8a75;font-size:.85rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+.ed-tab.active{color:#d4a843;border-bottom-color:#d4a843;background:rgba(212,168,67,.05)}
+.ed-tab:hover{color:#ede6d3}
+.log-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#1e1c1a}
+.log-form{padding:.8rem;background:#2a2725;border-bottom:2px solid #3a3530;display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;flex-shrink:0}
+.log-form label{display:block;font-size:.7rem;color:#9a8a75;margin-bottom:.15rem;font-weight:600}
+.log-form input,.log-form select{padding:.4rem;background:#1e1c1a;border:1px solid #3a3530;border-radius:6px;color:#ede6d3;font-size:.82rem}
+.log-form input:focus,.log-form select:focus{outline:none;border-color:#d4a843}
+.log-add-btn{padding:.4rem .8rem;background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;min-height:36px;align-self:flex-end}
+.log-entries{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:.5rem .8rem}
+.log-entry{display:flex;align-items:flex-start;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #3a3530;font-size:.82rem;color:#ede6d3}
+.log-date{color:#9a8a75;font-size:.75rem;white-space:nowrap;min-width:70px}
+.log-icon{font-size:1rem;flex-shrink:0}
+.log-body{flex:1}
+.log-body .log-type{font-weight:600;color:#d4a843}
+.log-body .log-crop{color:#9a8a75;font-size:.78rem}
+.log-body .log-note{color:#ede6d3;margin-top:.15rem;font-size:.8rem}
+.log-body .log-by{color:#9a8a75;font-size:.7rem;font-style:italic}
+.log-del{background:none;border:none;color:#6a3a28;font-size:.7rem;cursor:pointer;padding:.2rem;min-width:28px;min-height:28px;display:flex;align-items:center;justify-content:center}
+.log-empty{text-align:center;color:#9a8a75;font-size:.85rem;padding:2rem 1rem}
+@media(max-width:700px){
+    .log-form{flex-direction:column}
+    .log-form > div{width:100%}
+    .log-form input,.log-form select{width:100%}
+}
 /* Auth bar */
 .auth-bar{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:.5rem 1rem;padding-top:calc(env(safe-area-inset-top,0px) + .5rem);background:#22201e;border-bottom:1px solid #3a3530}
 .auth-bar .user-info{font-size:.8rem;color:#9a8a75;display:flex;align-items:center;gap:.4rem}
@@ -298,6 +345,10 @@ header h1 .leaf{color:#d4a843}
         <span class="bed-title" id="bedTitle" ondblclick="startRenameBed()">Bed</span>
         <span class="ed-count" id="edCount">0 plants</span>
     </div>
+    <div class="ed-tabs">
+        <button class="ed-tab active" onclick="switchEdTab('plants')">🌱 Plants</button>
+        <button class="ed-tab" onclick="switchEdTab('log')">📋 Activity Log</button>
+    </div>
     <div class="ed-body">
         <div class="pal-panel">
             <input type="text" id="palSearch" placeholder="🔍 Search (e.g. Roma Tomato)…" autocomplete="off">
@@ -324,6 +375,7 @@ header h1 .leaf{color:#d4a843}
         </div>
     </div>
     <div class="plant-summary" id="plantSummary"></div>
+    <div class="log-panel" id="logPanel" style="display:none"></div>
 </div>
 
 <!-- Custom plant modal -->
@@ -565,6 +617,7 @@ const db = firebase.database();
 const auth = firebase.auth();
 const bedsRef = db.ref('gardens/hutts-family-garden/beds');
 const layoutRef = db.ref('gardens/hutts-family-garden/layout');
+const trackingRef = db.ref('gardens/hutts-family-garden/tracking');
 
 /* ═══════════════════════════════════════════════
    AUTHENTICATION
@@ -1087,6 +1140,13 @@ function openBedEditor(bedId) {
     document.getElementById("bedEditor").style.display = "flex";
     document.getElementById("palSearch").value = "";
 
+    // Reset to Plants tab
+    document.querySelectorAll('.ed-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ed-tab')[0].classList.add('active');
+    document.querySelector('.ed-body').style.display = 'flex';
+    document.getElementById('plantSummary').style.display = '';
+    document.getElementById('logPanel').style.display = 'none';
+
     const bed = DATA.beds[bedId];
     if (!bed) { DATA.beds[bedId] = { name: bedId, plants: {} }; }
     document.getElementById("bedTitle").textContent = (bed || DATA.beds[bedId]).name;
@@ -1100,10 +1160,162 @@ function closeBedEditor() {
     document.getElementById("bedEditor").style.display = "none";
     document.getElementById("mapView").style.display = "block";
     document.querySelector(".data-bar").style.display = "flex";
+    // Detach tracking listener
+    if (currentBedId) trackingRef.child(currentBedId).off();
     currentBedId = null;
     selectedPlantId = null;
     renderMap();
     renderStats();
+}
+
+/* ─── Tracking / Activity Log ─── */
+let currentBedTracking = [];
+let trackingListener = null;
+
+const TRACK_TYPES = {
+    planted:    { icon: '🌱', label: 'Planted' },
+    fertilized: { icon: '🧪', label: 'Fertilized' },
+    watered:    { icon: '💧', label: 'Watered' },
+    harvested:  { icon: '🧺', label: 'Harvested' },
+    pruned:     { icon: '✂️', label: 'Pruned' },
+    note:       { icon: '📝', label: 'Note' }
+};
+
+function switchEdTab(tab) {
+    document.querySelectorAll('.ed-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'plants') {
+        document.querySelectorAll('.ed-tab')[0].classList.add('active');
+        document.querySelector('.ed-body').style.display = 'flex';
+        document.getElementById('plantSummary').style.display = '';
+        document.getElementById('logPanel').style.display = 'none';
+    } else {
+        document.querySelectorAll('.ed-tab')[1].classList.add('active');
+        document.querySelector('.ed-body').style.display = 'none';
+        document.getElementById('plantSummary').style.display = 'none';
+        document.getElementById('logPanel').style.display = 'flex';
+        loadBedTracking();
+    }
+}
+
+function loadBedTracking() {
+    if (!currentBedId) return;
+    // Detach previous listener if any
+    if (trackingListener) { trackingRef.child(trackingListener).off(); }
+    trackingListener = currentBedId;
+    trackingRef.child(currentBedId).on('value', snap => {
+        const val = snap.val();
+        currentBedTracking = [];
+        if (val) {
+            Object.entries(val).forEach(([id, entry]) => {
+                currentBedTracking.push({ id, ...entry });
+            });
+        }
+        renderTrackingLog();
+    });
+}
+
+function renderTrackingLog() {
+    const panel = document.getElementById('logPanel');
+    if (!panel || !currentBedId) return;
+
+    // Get plants in this bed for the crop dropdown
+    const bed = DATA.beds[currentBedId];
+    const cropSet = new Set();
+    if (bed && bed.plants) {
+        Object.values(bed.plants).forEach(p => {
+            cropSet.add(p.crop + '|' + p.variety);
+        });
+    }
+    const cropOptions = Array.from(cropSet).map(k => {
+        const [crop, variety] = k.split('|');
+        const info = findPlant(crop, variety);
+        return { crop, variety, label: info.displayName };
+    }).sort((a, b) => a.label.localeCompare(b.label));
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    let html = '';
+
+    // Add form (editors only)
+    if (canEdit()) {
+        html += `<div class="log-form">
+            <div><label>Date</label><input type="date" id="logDate" value="${today}"></div>
+            <div><label>Type</label><select id="logType">
+                ${Object.entries(TRACK_TYPES).map(([k, v]) => `<option value="${k}">${v.icon} ${v.label}</option>`).join('')}
+            </select></div>
+            <div><label>Plant (optional)</label><select id="logCrop">
+                <option value="">— any —</option>
+                ${cropOptions.map(c => `<option value="${c.crop}|${c.variety}">${c.label}</option>`).join('')}
+            </select></div>
+            <div style="flex:1;min-width:120px"><label>Note (optional)</label><input type="text" id="logNote" placeholder="Details…"></div>
+            <button class="log-add-btn" onclick="addTrackingEntry()">Add Entry</button>
+        </div>`;
+    }
+
+    // Sort entries newest first
+    const sorted = [...currentBedTracking].sort((a, b) => {
+        if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+        return (b.id || '').localeCompare(a.id || '');
+    });
+
+    html += '<div class="log-entries">';
+    if (!sorted.length) {
+        html += '<div class="log-empty">📋 No activity logged yet for this bed</div>';
+    } else {
+        sorted.forEach(entry => {
+            const tt = TRACK_TYPES[entry.type] || TRACK_TYPES.note;
+            html += `<div class="log-entry">
+                <span class="log-date">${entry.date || ''}</span>
+                <span class="log-icon">${tt.icon}</span>
+                <div class="log-body">
+                    <span class="log-type">${tt.label}</span>
+                    ${entry.crop ? `<span class="log-crop"> — ${entry.crop}${entry.variety ? ' (' + entry.variety + ')' : ''}</span>` : ''}
+                    ${entry.note ? `<div class="log-note">${escapeHtml(entry.note)}</div>` : ''}
+                    ${entry.by ? `<div class="log-by">— ${escapeHtml(entry.by)}</div>` : ''}
+                </div>
+                ${canEdit() ? `<button class="log-del" title="Delete" onclick="deleteTrackingEntry('${entry.id}')">✕</button>` : ''}
+            </div>`;
+        });
+    }
+    html += '</div>';
+
+    panel.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function addTrackingEntry() {
+    if (!canEdit() || !currentBedId) return;
+    const date = document.getElementById('logDate').value;
+    const type = document.getElementById('logType').value;
+    const cropVal = document.getElementById('logCrop').value;
+    const note = document.getElementById('logNote').value.trim();
+
+    const entry = {
+        date: date || new Date().toISOString().slice(0, 10),
+        type: type,
+        by: (currentUser && currentUser.displayName) || 'Unknown'
+    };
+    if (cropVal) {
+        const [crop, variety] = cropVal.split('|');
+        entry.crop = crop;
+        if (variety) entry.variety = variety;
+    }
+    if (note) entry.note = note;
+
+    trackingRef.child(currentBedId).push(entry);
+    // Clear note field
+    const noteEl = document.getElementById('logNote');
+    if (noteEl) noteEl.value = '';
+}
+
+function deleteTrackingEntry(entryId) {
+    if (!canEdit() || !currentBedId) return;
+    trackingRef.child(currentBedId + '/' + entryId).remove();
 }
 
 /* ─── Palette ─── */
