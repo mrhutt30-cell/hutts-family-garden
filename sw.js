@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hutt-garden-v1';
+const CACHE_NAME = 'hutt-garden-v2';
 const ASSETS = [
   './',
   './index.html',
