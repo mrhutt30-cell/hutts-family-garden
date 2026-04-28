@@ -841,7 +841,7 @@ function renderPalette(filter) {
 }
 
 /* ─── Perenual API Search (needs free key from perenual.com) ─── */
-const PERENUAL_KEY = ''; // Get a free key at perenual.com/docs/api to enable online plant search
+const PERENUAL_KEY = 'sk-J6h669f0cdebe018616821'; // Get a free key at perenual.com/docs/api to enable online plant search
 async function searchPlantsAPI(query) {
     if (!PERENUAL_KEY) return; // API disabled — custom entry still works
     try {
