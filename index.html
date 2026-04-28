@@ -23,7 +23,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
      padding-bottom:env(safe-area-inset-bottom,0)}
 
 /* Header */
-header{background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;padding:1rem 1.5rem;text-align:center;box-shadow:0 2px 8px var(--shadow);position:relative}
+header{background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;padding:1rem 1.5rem;padding-top:calc(env(safe-area-inset-top,0px) + 1rem);text-align:center;box-shadow:0 2px 8px var(--shadow);position:relative}
 header h1{font-size:1.6rem;font-weight:700}
 header h1 .leaf{color:var(--green-light)}
 .hdr-sub{font-size:.82rem;opacity:.8;margin-top:.15rem}
@@ -58,7 +58,7 @@ header h1 .leaf{color:var(--green-light)}
 
 /* ═══════ BED EDITOR ═══════ */
 #bedEditor{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;flex-direction:column;overflow:hidden}
-.ed-header{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;flex-shrink:0}
+.ed-header{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;padding-top:calc(env(safe-area-inset-top,0px) + .8rem);background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;flex-shrink:0}
 .ed-back{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:1rem;padding:.4rem .8rem;border-radius:8px;cursor:pointer;min-height:44px}
 .bed-title{font-size:1.2rem;font-weight:700;flex:1}
 .bed-title-input{font-size:1.2rem;font-weight:700;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:.2rem .5rem;flex:1}
