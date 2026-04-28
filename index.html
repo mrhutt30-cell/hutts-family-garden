@@ -45,7 +45,9 @@ header h1 .leaf{color:#d4a843}
 .map-bed.tall{background:linear-gradient(135deg,#7a5a20,#5a4210)}
 .map-bed.ground{background:linear-gradient(135deg,#3a2510,#2a1808)}
 .map-bed-label{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.45rem;font-weight:600;color:rgba(237,230,211,.7);background:rgba(0,0,0,.5);padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.map-dot{position:absolute;border-radius:50%;width:6px;height:6px;transform:translate(-50%,-50%);pointer-events:none}
+.map-dot{position:absolute;border-radius:50%;width:6px;height:6px;transform:translate(-50%,-50%);pointer-events:none;transition:all .3s}
+.map-dot.dot-highlight{width:12px;height:12px;box-shadow:0 0 8px 3px rgba(212,168,67,.7);z-index:40;border:1.5px solid #d4a843}
+.map-dot.dot-dim{opacity:.15}
 
 /* Map tooltip */
 .map-tt{position:absolute;background:rgba(42,39,37,.95);color:#ede6d3;font-size:.75rem;line-height:1.4;padding:.5rem .7rem;border-radius:8px;border:1px solid #3a3530;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;max-width:200px}
@@ -53,7 +55,8 @@ header h1 .leaf{color:#d4a843}
 
 /* Legend */
 .legend{max-width:1000px;margin:.5rem auto;padding:0 1rem;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
-.leg-item{display:flex;align-items:center;gap:.3rem;font-size:.75rem;background:#2a2725;padding:.2rem .6rem;border-radius:12px;box-shadow:0 1px 3px var(--shadow);color:#ede6d3;border:1px solid #3a3530}
+.leg-item{display:flex;align-items:center;gap:.3rem;font-size:.75rem;background:#2a2725;padding:.2rem .6rem;border-radius:12px;box-shadow:0 1px 3px var(--shadow);color:#ede6d3;border:1px solid #3a3530;cursor:pointer;transition:border-color .2s,background .2s}
+.leg-item:hover{border-color:#d4a843;background:#332f2b}
 .leg-sw{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 
 /* Plant Finder */
@@ -751,6 +754,8 @@ function renderMap() {
                 const info = findPlant(p.crop, p.variety);
                 const dot = document.createElement("div");
                 dot.className = "map-dot";
+                dot.dataset.crop = p.crop;
+                dot.dataset.variety = p.variety;
                 dot.style.background = info.color;
                 dot.style.left = p.x + "%";
                 dot.style.top = p.y + "%";
@@ -837,8 +842,8 @@ function renderLegend() {
     });
     const el = document.getElementById("mapLegend");
     if (!used.size) { el.innerHTML = '<span style="color:#9e9e9e;font-size:.8rem">Plant something to see the legend</span>'; return; }
-    el.innerHTML = Array.from(used.values()).sort((a, b) => a.displayName.localeCompare(b.displayName))
-        .map(p => `<div class="leg-item"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
+    el.innerHTML = Array.from(used.entries()).sort((a, b) => a[1].displayName.localeCompare(b[1].displayName))
+        .map(([k, p]) => `<div class="leg-item" onclick="legendLocate('${k.replace(/'/g, "\\'")}')" style="cursor:pointer"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
 }
 
 /* ═══════════════════════════════════════════════
@@ -954,62 +959,47 @@ function finderLocate(plantKey) {
         return;
     }
 
-    // Find which beds contain this exact plant
-    const matchBedIds = new Set();
-    Object.entries(DATA.beds).forEach(([bedId, bed]) => {
-        if (!bed || !bed.plants) return;
-        Object.values(bed.plants).forEach(p => {
-            if (p.crop === crop && p.variety === variety) matchBedIds.add(bedId);
-        });
-    });
+    highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
+}
 
-    // Scroll map into view
-    const mapEl = document.getElementById("gardenMap");
-    mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    // Highlight matching beds, dim others
-    const allBeds = mapEl.querySelectorAll(".map-bed");
-    allBeds.forEach((el, i) => {
-        const def = BEDS[i];
-        if (!def) return;
-        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
-        if (matchBedIds.has(def.id)) {
-            el.classList.add("finder-pulse");
-        } else {
-            el.classList.add("finder-dim");
-        }
-    });
-
-    // Clear pulse after animation
-    setTimeout(() => {
-        allBeds.forEach(el => {
-            el.classList.remove("finder-pulse");
-            if (el.classList.contains("finder-dim")) return;
-            el.classList.add("finder-glow");
-        });
-    }, 3100);
+function legendLocate(plantKey) {
+    // Toggle — clicking same legend item again clears
+    if (finderHighlightKey === plantKey) {
+        finderHighlightKey = null;
+        clearFinderHighlight();
+        return;
+    }
+    finderHighlightKey = plantKey;
+    const [crop, variety] = plantKey.split("|");
+    highlightDots(dot => dot.dataset.crop === crop && dot.dataset.variety === variety);
 }
 
 function highlightBedsByCrop(cropName) {
-    const matchBedIds = new Set();
-    Object.entries(DATA.beds).forEach(([bedId, bed]) => {
-        if (!bed || !bed.plants) return;
-        Object.values(bed.plants).forEach(p => {
-            if (p.crop === cropName) matchBedIds.add(bedId);
-        });
-    });
+    highlightDots(dot => dot.dataset.crop === cropName);
+}
 
+function highlightDots(matchFn) {
     const mapEl = document.getElementById("gardenMap");
     mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    const allBeds = mapEl.querySelectorAll(".map-bed");
-    allBeds.forEach((el, i) => {
-        const def = BEDS[i];
-        if (!def) return;
-        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
-        if (matchBedIds.has(def.id)) {
-            el.classList.add("finder-glow");
+    const allDots = mapEl.querySelectorAll(".map-dot");
+    let hasMatch = false;
+    allDots.forEach(dot => {
+        dot.classList.remove("dot-highlight", "dot-dim");
+        if (matchFn(dot)) {
+            dot.classList.add("dot-highlight");
+            hasMatch = true;
         } else {
+            dot.classList.add("dot-dim");
+        }
+    });
+
+    // Lightly dim beds that have no matching dots
+    const allBeds = mapEl.querySelectorAll(".map-bed");
+    allBeds.forEach(el => {
+        el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
+        const hasDot = el.querySelector(".dot-highlight");
+        if (!hasDot && hasMatch) {
             el.classList.add("finder-dim");
         }
     });
@@ -1018,6 +1008,9 @@ function highlightBedsByCrop(cropName) {
 function clearFinderHighlight() {
     document.querySelectorAll(".map-bed").forEach(el => {
         el.classList.remove("finder-glow", "finder-dim", "finder-pulse");
+    });
+    document.querySelectorAll(".map-dot").forEach(dot => {
+        dot.classList.remove("dot-highlight", "dot-dim");
     });
 }
 
