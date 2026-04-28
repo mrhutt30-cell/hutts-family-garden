@@ -1081,7 +1081,7 @@ function findPlant(crop, variety) {
         || {crop,variety,displayName:crop+" "+variety,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
 }
 
-function renderPalette(filter) {
+function renderPalette(filter, skipApiTrigger) {
     const list = document.getElementById("palList");
     const q = (filter || "").toLowerCase().trim();
     const all = getAllPlants();
@@ -1148,15 +1148,15 @@ function renderPalette(filter) {
         });
     });
 
-    // Trigger API search after debounce
-    if (q && q.length >= 2) {
+    // Trigger API search after debounce (only from user input, not from API callback)
+    if (!skipApiTrigger && q && q.length >= 2 && PERENUAL_KEY) {
         clearTimeout(apiSearchTimeout);
         apiSearchTimeout = setTimeout(() => {
             apiSearching = true;
-            renderPalette(document.getElementById("palSearch").value);
+            renderPalette(document.getElementById("palSearch").value, true);
             searchPlantsAPI(q);
         }, 400);
-    } else {
+    } else if (!q) {
         apiResults = [];
         apiSearching = false;
     }
@@ -1168,7 +1168,7 @@ async function searchPlantsAPI(query) {
     if (!PERENUAL_KEY) return;
     try {
         const resp = await fetch(`https://perenual.com/api/species-list?key=${PERENUAL_KEY}&q=${encodeURIComponent(query)}`);
-        if (!resp.ok) { apiSearching = false; renderPalette(document.getElementById("palSearch").value); return; }
+        if (!resp.ok) { apiSearching = false; renderPalette(document.getElementById("palSearch").value, true); return; }
         const data = await resp.json();
         const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
         apiResults = (data.data || []).slice(0, 8)
@@ -1187,11 +1187,11 @@ async function searchPlantsAPI(query) {
             });
         apiSearching = false;
         const q = document.getElementById("palSearch").value;
-        if (q) renderPalette(q);
+        if (q) renderPalette(q, true);
     } catch(e) {
         apiSearching = false;
         const q = document.getElementById("palSearch").value;
-        if (q) renderPalette(q);
+        if (q) renderPalette(q, true);
     }
 }
 
