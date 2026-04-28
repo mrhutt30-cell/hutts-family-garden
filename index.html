@@ -431,9 +431,33 @@ header h1 .leaf{color:#d4a843}
 
 <!-- Data bar -->
 <div class="data-bar">
+    <button class="data-btn" onclick="openGlobalLog()">📋 Log All Beds</button>
     <button class="data-btn" onclick="exportData()">📥 Export JSON</button>
     <label class="data-btn">📤 Import JSON<input type="file" id="importFile" accept=".json" onchange="importData(event)"></label>
     <button class="data-btn" onclick="resetData()">🔄 Reset All</button>
+</div>
+
+<!-- Global log modal -->
+<div class="plant-edit-modal" id="globalLogModal" style="display:none">
+    <div class="plant-edit-form" style="max-width:380px">
+        <h3>📋 Log Entry for All Beds</h3>
+        <div class="pef-row"><label>Date</label><input type="date" id="glDate"></div>
+        <div class="pef-row"><label>Event Type</label>
+            <select id="glType">
+                <option value="planted">🌱 Planted</option>
+                <option value="fertilized">🧪 Fertilized</option>
+                <option value="watered">💧 Watered</option>
+                <option value="harvested">🧺 Harvested</option>
+                <option value="pruned">✂️ Pruned</option>
+                <option value="note">📝 Note</option>
+            </select>
+        </div>
+        <div class="pef-row"><label>Note (optional)</label><input type="text" id="glNote" placeholder="e.g. Added fish fertilizer"></div>
+        <div class="pef-btns">
+            <button class="pef-cancel" onclick="closeGlobalLog()">Cancel</button>
+            <button class="pef-save" onclick="submitGlobalLog()">Log to All Beds</button>
+        </div>
+    </div>
 </div>
 
 <!-- Firebase SDK (compat for script-tag usage) -->
@@ -1316,6 +1340,45 @@ function addTrackingEntry() {
 function deleteTrackingEntry(entryId) {
     if (!canEdit() || !currentBedId) return;
     trackingRef.child(currentBedId + '/' + entryId).remove();
+}
+
+function openGlobalLog() {
+    if (!canEdit()) { alert("You don't have edit access"); return; }
+    document.getElementById('glDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('glNote').value = '';
+    document.getElementById('glType').value = 'planted';
+    document.getElementById('globalLogModal').style.display = 'flex';
+}
+
+function closeGlobalLog() {
+    document.getElementById('globalLogModal').style.display = 'none';
+}
+
+function submitGlobalLog() {
+    if (!canEdit()) return;
+    const date = document.getElementById('glDate').value || new Date().toISOString().slice(0, 10);
+    const type = document.getElementById('glType').value;
+    const note = document.getElementById('glNote').value.trim();
+    const by = (currentUser && currentUser.displayName) || 'Unknown';
+
+    const bedsToLog = BEDS.filter(b => {
+        const bed = DATA.beds[b.id];
+        return bed && bed.plants && Object.keys(bed.plants).length > 0;
+    });
+
+    if (!bedsToLog.length) { alert('No beds have plants to log against'); closeGlobalLog(); return; }
+    if (!confirm(`This will add a "${type}" entry to ${bedsToLog.length} bed(s). Continue?`)) return;
+
+    const updates = {};
+    bedsToLog.forEach(b => {
+        const entryId = genId();
+        const entry = { date, type, by };
+        if (note) entry.note = note;
+        updates[`${b.id}/${entryId}`] = entry;
+    });
+
+    trackingRef.update(updates);
+    closeGlobalLog();
 }
 
 /* ─── Palette ─── */
