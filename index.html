@@ -1413,6 +1413,33 @@ function renderBedCanvas() {
     });
 }
 
+// Minimum distance between plant centers (as % of canvas)
+const MIN_PLANT_DIST = 5;
+
+function isSpotTaken(bedId, x, y, excludeId) {
+    const bed = DATA.beds[bedId];
+    if (!bed || !bed.plants) return false;
+    return Object.entries(bed.plants).some(([id, p]) => {
+        if (id === excludeId) return false;
+        const dx = p.x - x, dy = p.y - y;
+        return Math.sqrt(dx * dx + dy * dy) < MIN_PLANT_DIST;
+    });
+}
+
+function findNearestOpen(bedId, x, y, excludeId) {
+    if (!isSpotTaken(bedId, x, y, excludeId)) return { x, y };
+    // Spiral outward to find open spot
+    for (let r = MIN_PLANT_DIST; r < 60; r += MIN_PLANT_DIST * 0.6) {
+        for (let a = 0; a < 360; a += 30) {
+            const nx = Math.round((x + r * Math.cos(a * Math.PI / 180)) * 10) / 10;
+            const ny = Math.round((y + r * Math.sin(a * Math.PI / 180)) * 10) / 10;
+            if (nx < 3 || nx > 97 || ny < 3 || ny > 97) continue;
+            if (!isSpotTaken(bedId, nx, ny, excludeId)) return { x: nx, y: ny };
+        }
+    }
+    return { x, y }; // fallback
+}
+
 // Click on empty canvas space to place a new plant
 document.getElementById("bedCanvas").addEventListener("pointerdown", function(e) {
     if (e.target !== this) return;
@@ -1424,8 +1451,9 @@ document.getElementById("bedCanvas").addEventListener("pointerdown", function(e)
     const clamped_x = Math.max(3, Math.min(97, x));
     const clamped_y = Math.max(3, Math.min(97, y));
 
+    const spot = findNearestOpen(currentBedId, clamped_x, clamped_y);
     const id = genId();
-    const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: clamped_x, y: clamped_y };
+    const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: spot.x, y: spot.y };
 
     if (!DATA.beds[currentBedId].plants) DATA.beds[currentBedId].plants = {};
     DATA.beds[currentBedId].plants[id] = plantData;
@@ -1492,8 +1520,11 @@ function startDrag(e, plantId) {
         el.classList.remove("dragging");
 
         if (moved && dragState) {
-            const newX = Math.round(parseFloat(el.style.left) * 10) / 10;
-            const newY = Math.round(parseFloat(el.style.top) * 10) / 10;
+            let newX = Math.round(parseFloat(el.style.left) * 10) / 10;
+            let newY = Math.round(parseFloat(el.style.top) * 10) / 10;
+            const spot = findNearestOpen(currentBedId, newX, newY, dragState.plantId);
+            newX = spot.x;
+            newY = spot.y;
             const bed = DATA.beds[currentBedId];
             if (bed.plants[dragState.plantId]) {
                 bed.plants[dragState.plantId].x = newX;
@@ -1556,33 +1587,33 @@ function bulkPlace() {
     let count = 0;
 
     if (pattern === "row") {
-        // Horizontal line at Y=pos, evenly spaced along X
         for (let i = 0; i < qty; i++) {
             const id = genId();
-            const x = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
-            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y: pos };
+            const rawX = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
+            const spot = findNearestOpen(currentBedId, rawX, pos);
+            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: spot.x, y: spot.y };
             bed.plants[id] = plantData;
             updates[id] = plantData;
         }
     } else if (pattern === "col") {
-        // Vertical line at X=pos, evenly spaced along Y
         for (let i = 0; i < qty; i++) {
             const id = genId();
-            const y = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
-            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: pos, y };
+            const rawY = qty === 1 ? 50 : Math.round((5 + (i / (qty - 1)) * 90) * 10) / 10;
+            const spot = findNearestOpen(currentBedId, pos, rawY);
+            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: spot.x, y: spot.y };
             bed.plants[id] = plantData;
             updates[id] = plantData;
         }
     } else {
-        // Grid (original behavior)
         const cols = Math.ceil(Math.sqrt(qty));
         const rows = Math.ceil(qty / cols);
         for (let r = 0; r < rows && count < qty; r++) {
             for (let c = 0; c < cols && count < qty; c++) {
                 const id = genId();
-                const x = cols === 1 ? 50 : Math.round((10 + (c / (cols - 1)) * 80) * 10) / 10;
-                const y = rows === 1 ? 50 : Math.round((10 + (r / (rows - 1)) * 80) * 10) / 10;
-                const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y };
+                const rawX = cols === 1 ? 50 : Math.round((10 + (c / (cols - 1)) * 80) * 10) / 10;
+                const rawY = rows === 1 ? 50 : Math.round((10 + (r / (rows - 1)) * 80) * 10) / 10;
+                const spot = findNearestOpen(currentBedId, rawX, rawY);
+                const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: spot.x, y: spot.y };
                 bed.plants[id] = plantData;
                 updates[id] = plantData;
                 count++;
@@ -1620,7 +1651,17 @@ function renderPlantSummary() {
         return ai.displayName.localeCompare(bi.displayName);
     });
 
-    el.innerHTML = `<div class="summary-title">Plants in this bed</div>` +
+    // Check for overlaps
+    const plants = Object.entries(bed.plants);
+    let overlapCount = 0;
+    for (let i = 0; i < plants.length; i++) {
+        for (let j = i + 1; j < plants.length; j++) {
+            const dx = plants[i][1].x - plants[j][1].x, dy = plants[i][1].y - plants[j][1].y;
+            if (Math.sqrt(dx * dx + dy * dy) < MIN_PLANT_DIST) overlapCount++;
+        }
+    }
+
+    el.innerHTML = `<div class="summary-title">Plants in this bed${overlapCount && canEdit() ? ` <button class="summary-del" style="font-size:.7rem;color:#c09a8a" onclick="fixOverlaps()">⚠️ Fix ${overlapCount} overlap${overlapCount>1?'s':''}</button>` : ''}</div>` +
         sorted.map(g => {
             const info = findPlant(g.crop, g.variety);
             return `<div class="summary-item">
@@ -1653,6 +1694,32 @@ function deleteGroup(crop, variety) {
 
     bedsRef.child(`${currentBedId}/plants`).update(toDelete);
     if (selectedPlantId && !bed.plants[selectedPlantId]) selectedPlantId = null;
+    renderBedCanvas();
+    renderPlantSummary();
+}
+
+function fixOverlaps() {
+    if (!canEdit() || !currentBedId) return;
+    const bed = DATA.beds[currentBedId];
+    if (!bed || !bed.plants) return;
+
+    const ids = Object.keys(bed.plants);
+    const updates = {};
+    // Process each plant — nudge if overlapping any earlier plant
+    for (let i = 0; i < ids.length; i++) {
+        const p = bed.plants[ids[i]];
+        const spot = findNearestOpen(currentBedId, p.x, p.y, ids[i]);
+        if (spot.x !== p.x || spot.y !== p.y) {
+            p.x = spot.x;
+            p.y = spot.y;
+            updates[`${ids[i]}/x`] = spot.x;
+            updates[`${ids[i]}/y`] = spot.y;
+        }
+    }
+
+    if (Object.keys(updates).length) {
+        bedsRef.child(`${currentBedId}/plants`).update(updates);
+    }
     renderBedCanvas();
     renderPlantSummary();
 }
