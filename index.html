@@ -1172,8 +1172,8 @@ let apiSearchError = '';
 async function searchPlantsOnline(query) {
     apiSearchError = '';
     try {
-        // Use Wikipedia opensearch for clean name suggestions
-        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=15&namespace=0&format=json&origin=*`;
+        // Use Wikipedia search API scoped to plant/garden topics, requesting descriptions
+        const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}+plant+OR+fruit+OR+vegetable+OR+herb+OR+flower+OR+cultivar&srlimit=20&format=json&origin=*`;
         const resp = await fetch(url);
         if (!resp.ok) {
             apiSearchError = '⚠️ Online search unavailable';
@@ -1182,21 +1182,25 @@ async function searchPlantsOnline(query) {
             return;
         }
         const data = await resp.json();
-        const names = data[1] || [];
+        const results = (data.query && data.query.search) || [];
         const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
 
-        // Filter to plant/garden-relevant results
-        const plantWords = /plant|fruit|vegetable|herb|flower|tree|shrub|vine|grass|fern|berry|seed|leaf|garden|cultivar|species|genus|crop|tomato|pepper|onion|apple|melon|squash|bean|pea|corn|lettuce|potato|carrot|beet|radish|cucumber|basil|mint|rose|lily|oak|maple/i;
-        apiResults = names
-            .filter(name => {
-                const low = name.toLowerCase();
-                // Skip disambiguation, lists, film, etc.
-                if (/\(disambiguation\)|\(film\)|\(band\)|\(album\)|\(song\)|list of/i.test(name)) return false;
-                if (existing.has(low)) return false;
-                return true;
+        // Blocklist for non-plant junk
+        const junkPattern = /\(disambiguation\)|\(film\)|\(movie\)|\(TV\)|\(band\)|\(album\)|\(song\)|\(magazine\)|\(novel\)|\(game\)|\(company\)|list of|software|album|season \d|episode|character|actor|singer/i;
+        // Snippet must mention plant-related terms
+        const plantSnippet = /plant|species|genus|family|fruit|flower|vegetable|herb|tree|shrub|vine|cultivar|perennial|annual|biennial|edible|crop|garden|leaf|seed|bulb|tuber|root|berry|botanical|horticultur/i;
+
+        apiResults = results
+            .filter(r => {
+                if (junkPattern.test(r.title)) return false;
+                if (existing.has(r.title.toLowerCase())) return false;
+                // Require the snippet to contain plant-related language
+                const snippet = (r.snippet || '').replace(/<[^>]+>/g, '');
+                return plantSnippet.test(snippet);
             })
             .slice(0, 8)
-            .map((name, i) => {
+            .map((r, i) => {
+                const name = r.title;
                 const cat = guessCategory(name, '');
                 const color = catColors[cat] || '#66bb6a';
                 const emoji = catEmojis[cat] || '🌱';
