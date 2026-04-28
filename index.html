@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hutt Garden">
+<meta name="theme-color" content="#2e7d32">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>The Hutt's Family Garden</title>
+<style>
+:root {
+    --green-dark:#2e7d32;--green-mid:#43a047;--green-light:#66bb6a;
+    --green-pale:#e8f5e9;--earth-dark:#3e2723;--earth-mid:#5d4037;
+    --wood:#a1887f;--wood-light:#d7ccc8;--bg:#f1f8e9;
+    --white:#fff;--text:#212121;--text-light:#616161;
+    --shadow:rgba(0,0,0,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+header{background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;padding:1.2rem 2rem;text-align:center;box-shadow:0 2px 8px var(--shadow)}
+header h1{font-size:1.8rem;font-weight:700}
+header h1 .leaf{color:var(--green-light)}
+.hdr-sub{font-size:.85rem;opacity:.8;margin-top:.2rem}
+.hdr-stats{display:flex;justify-content:center;gap:1.5rem;margin-top:.6rem;flex-wrap:wrap}
+.hdr-stat{background:rgba(255,255,255,.15);padding:.25rem .8rem;border-radius:20px;font-size:.8rem}
+.hdr-stat strong{color:var(--green-light)}
+
+/* Views */
+#mapView,#bedEditor{transition:opacity .2s}
+#bedEditor{display:none}
+
+/* Garden Map */
+.map-wrap{max-width:1000px;margin:1.5rem auto;padding:0 1rem}
+.map-hint{text-align:center;color:var(--text-light);font-size:.9rem;margin-bottom:.8rem}
+.garden-map{position:relative;width:100%;padding-bottom:62.5%;background:linear-gradient(180deg,#c8e6c9,#a5d6a7 50%,#81c784);border-radius:14px;border:3px solid var(--wood);overflow:hidden;box-shadow:0 4px 16px var(--shadow)}
+.house{position:absolute;top:0;left:8%;right:8%;height:7%;background:linear-gradient(180deg,#78909c,#607d8b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:600;letter-spacing:1px;border-bottom:3px solid #546e7a}
+
+/* Map beds */
+.map-bed{position:absolute;border-radius:5px;cursor:pointer;border:2px solid var(--wood);transition:transform .15s,box-shadow .15s;z-index:10;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px}
+.map-bed:hover{transform:scale(1.06);z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.map-bed.tall{background:var(--wood-light)}
+.map-bed.ground{background:#6d4c41}
+.map-bed-visual{width:90%;flex:1;min-height:0;display:flex;gap:1px;overflow:hidden;align-items:stretch}
+.map-lane{flex:1;display:flex;flex-direction:column;gap:1px;justify-content:start;min-width:0;overflow:hidden}
+.map-dot{border-radius:50%;flex-shrink:0;aspect-ratio:1;min-height:2px;max-height:8px}
+.map-bed-label{font-size:.45rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;line-height:1}
+
+/* Map tooltip */
+.map-tt{display:none;position:absolute;background:rgba(0,0,0,.88);color:#fff;padding:.5rem .7rem;border-radius:8px;font-size:.72rem;max-width:240px;z-index:100;pointer-events:none}
+.map-tt.vis{display:block}
+.map-tt b{display:block;margin-bottom:.2rem}
+
+/* Map legend */
+.map-legend{display:flex;justify-content:center;gap:1.2rem;margin-top:.8rem;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-light)}
+.leg-sw{width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+
+/* ═══ BED EDITOR ═══ */
+.bed-editor{max-width:1100px;margin:0 auto;padding:1rem}
+.bed-toolbar{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem}
+.bed-back{padding:.5rem 1rem;border:none;background:var(--white);border-radius:8px;cursor:pointer;font-weight:600;font-size:.85rem;box-shadow:0 1px 4px var(--shadow);display:flex;align-items:center;gap:.3rem}
+.bed-back:hover{background:#e8e8e8}
+.bed-title{font-size:1.3rem;font-weight:700;flex:1}
+.bed-title-input{font-size:1.3rem;font-weight:700;border:2px solid var(--green-mid);border-radius:6px;padding:.1rem .4rem;outline:none;width:220px}
+.bed-info{font-size:.8rem;color:var(--text-light)}
+
+.editor-body{display:flex;gap:1.2rem;align-items:flex-start;flex-wrap:wrap}
+
+/* Palette */
+.palette{width:280px;background:var(--white);border-radius:12px;box-shadow:0 2px 8px var(--shadow);overflow:hidden;flex-shrink:0;max-height:80vh;display:flex;flex-direction:column}
+.pal-header{padding:.8rem 1rem;border-bottom:1px solid #e0e0e0;font-weight:700;font-size:.95rem}
+.pal-search{padding:.5rem .8rem}
+.pal-search input{width:100%;padding:.5rem .7rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.85rem;outline:none}
+.pal-search input:focus{border-color:var(--green-mid)}
+.pal-list{flex:1;overflow-y:auto;padding:.3rem 0}
+.pal-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;cursor:pointer;font-size:.82rem;transition:background .1s;border-left:3px solid transparent}
+.pal-item:hover{background:var(--green-pale)}
+.pal-item.selected{background:#c8e6c9;border-left-color:var(--green-dark);font-weight:600}
+.pal-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
+.pal-emoji{font-size:1rem;flex-shrink:0}
+.pal-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pal-cat{font-size:.65rem;color:var(--text-light);margin-left:auto;white-space:nowrap}
+
+/* Bed visual + lane editor */
+.grid-wrap{flex:1;min-width:0}
+
+.bed-visual{background:var(--earth-dark);border-radius:10px;padding:8px;box-shadow:0 2px 10px var(--shadow);display:flex;gap:4px;min-height:120px;margin-bottom:1rem;position:relative;overflow:visible}
+.lane{flex:1;background:#5d4037;border-radius:4px;padding:4px;display:flex;flex-direction:column;gap:3px;min-width:50px;position:relative;transition:background .15s}
+.lane:hover{background:#6d4c41}
+.lane-header{text-align:center;font-size:.6rem;font-weight:700;color:rgba(255,255,255,.6);padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
+.lane-plant{display:flex;align-items:center;justify-content:center;border-radius:50%;aspect-ratio:1;width:100%;max-width:48px;margin:0 auto;cursor:pointer;position:relative;transition:transform .1s;border:2px solid rgba(255,255,255,.2);font-size:.7rem}
+.lane-plant:hover{transform:scale(1.1);border-color:rgba(255,255,255,.6)}
+.lane-plant .lp-emoji{font-size:1rem}
+.lane-plant .lp-label{position:absolute;bottom:-10px;font-size:.45rem;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none}
+.lane-empty{width:100%;max-width:48px;aspect-ratio:1;margin:0 auto;border-radius:50%;border:2px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.7rem;color:rgba(255,255,255,.3);transition:all .15s}
+.lane-empty:hover{border-color:rgba(255,255,255,.5);color:rgba(255,255,255,.6);background:rgba(255,255,255,.05)}
+
+/* Lane controls */
+.lane-controls{display:flex;justify-content:center;gap:.5rem;margin-bottom:.8rem}
+.lane-ctrl-btn{padding:.35rem .7rem;border:2px solid #e0e0e0;border-radius:8px;background:var(--white);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:.3rem}
+.lane-ctrl-btn:hover{border-color:var(--green-mid);background:var(--green-pale)}
+
+/* Plant entries table */
+.entries-panel{background:var(--white);border-radius:12px;box-shadow:0 2px 8px var(--shadow);overflow:hidden}
+.entries-header{padding:.8rem 1rem;border-bottom:1px solid #e0e0e0;font-weight:700;font-size:.95rem;display:flex;align-items:center;justify-content:space-between}
+.entries-list{list-style:none;max-height:400px;overflow-y:auto}
+.entry-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;border-bottom:1px solid #f5f5f5;font-size:.85rem}
+.entry-item:last-child{border-bottom:none}
+.entry-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
+.entry-emoji{font-size:1rem;flex-shrink:0}
+.entry-name{font-weight:500;flex:1;min-width:0}
+.entry-name small{font-weight:400;color:var(--text-light);font-size:.75rem}
+.entry-lane{background:#e3f2fd;color:#1565c0;font-size:.7rem;font-weight:600;padding:.15rem .5rem;border-radius:10px;white-space:nowrap}
+.entry-qty{background:var(--green-pale);color:var(--green-dark);font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:10px}
+.entry-del{width:24px;height:24px;border-radius:6px;border:1px solid #e0e0e0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+.entry-del:hover{background:#ffebee;border-color:#ef5350}
+.entries-empty{padding:1.5rem;text-align:center;color:var(--text-light);font-size:.85rem;font-style:italic}
+
+/* Add plant row */
+.add-row{padding:.8rem 1rem;border-top:1px solid #e0e0e0;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.add-row .search-wrap{position:relative;flex:1;min-width:140px}
+.add-row input[type=text]{width:100%;padding:.45rem .6rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;outline:none}
+.add-row input[type=text]:focus{border-color:var(--green-mid)}
+.add-row input[type=number]{width:55px;padding:.45rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;text-align:center;outline:none}
+.add-row input[type=number]:focus{border-color:var(--green-mid)}
+.add-row select{padding:.45rem .4rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;outline:none;background:#fff}
+.add-row select:focus{border-color:var(--green-mid)}
+.add-btn{padding:.45rem .8rem;background:var(--green-dark);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.add-btn:hover{background:var(--green-mid)}
+
+/* Autocomplete */
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 16px var(--shadow);display:none}
+.ac-list.vis{display:block}
+.ac-item{padding:.45rem .7rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;font-size:.82rem}
+.ac-item:hover,.ac-item.hl{background:var(--green-pale)}
+.ac-item .ac-e{font-size:.95rem}
+.ac-item .ac-n{font-weight:500}
+.ac-item .ac-c{font-size:.65rem;color:var(--text-light);margin-left:auto}
+
+/* Data bar */
+.data-bar{display:flex;justify-content:center;gap:.5rem;padding:.8rem;background:var(--white);border-top:1px solid #e0e0e0}
+.data-btn{padding:.4rem .8rem;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer;font-size:.75rem;color:var(--text-light)}
+.data-btn:hover{background:#f5f5f5}
+
+@media(max-width:700px){
+    body{padding-bottom:env(safe-area-inset-bottom)}
+    header{padding:1rem .8rem}
+    header h1{font-size:1.3rem}
+    .hdr-sub{font-size:.75rem}
+    .hdr-stats{gap:.6rem}
+    .hdr-stat{font-size:.7rem;padding:.2rem .5rem}
+
+    .map-wrap{padding:0 .5rem;margin:1rem auto}
+    .map-hint{font-size:.8rem;margin-bottom:.5rem}
+    .garden-map{aspect-ratio:4/3;border-radius:10px}
+    .map-bed-label{font-size:.35rem}
+    .map-legend{gap:.6rem}
+    .leg-item{font-size:.7rem}
+
+    .bed-editor{padding:.6rem}
+    .bed-toolbar{gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap}
+    .bed-back{padding:.4rem .7rem;font-size:.8rem}
+    .bed-title{font-size:1.1rem}
+    .bed-info{font-size:.7rem}
+
+    .editor-body{flex-direction:column;gap:.8rem}
+    .palette{width:100%;max-height:none;border-radius:10px}
+    .pal-list{max-height:180px;overflow-y:auto}
+    .pal-item{padding:.5rem .8rem;font-size:.85rem}
+    .pal-search input{font-size:.9rem;padding:.55rem .7rem}
+
+    .lane-controls{gap:.3rem;margin-bottom:.5rem}
+    .lane-ctrl-btn{padding:.3rem .5rem;font-size:.72rem}
+    .bed-visual{padding:6px;gap:3px;min-height:100px}
+    .lane{padding:3px;min-width:40px}
+    .lane-header{font-size:.55rem}
+    .lane-plant{max-width:38px}
+    .lane-plant .lp-emoji{font-size:.85rem}
+    .lane-empty{max-width:38px}
+
+    .entries-panel{border-radius:10px}
+    .entries-header{padding:.7rem .8rem;font-size:.9rem}
+    .entry-item{padding:.5rem .8rem;gap:.4rem;font-size:.82rem}
+    .entry-emoji{font-size:.9rem}
+    .entry-lane{font-size:.65rem;padding:.1rem .4rem}
+    .entry-qty{font-size:.7rem;padding:.1rem .4rem}
+
+    .add-row{padding:.7rem .8rem;flex-wrap:wrap;gap:.4rem}
+    .add-row .search-wrap{min-width:100%;flex-basis:100%}
+    .add-row input[type=text]{font-size:.9rem;padding:.55rem .7rem}
+    .add-row input[type=number]{width:60px;font-size:.9rem;padding:.55rem}
+    .add-row select{font-size:.9rem;padding:.55rem .5rem;flex:1}
+    .add-btn{font-size:.85rem;padding:.55rem 1rem;flex:1}
+
+    .ac-list{max-height:180px}
+    .ac-item{padding:.55rem .7rem;font-size:.85rem}
+
+    .data-bar{padding:.6rem;gap:.3rem;flex-wrap:wrap}
+    .data-btn{font-size:.7rem;padding:.35rem .6rem}
+}
+
+/* Extra small phones */
+@media(max-width:380px){
+    header h1{font-size:1.1rem}
+    .bed-title{font-size:1rem}
+    .lane-plant{max-width:32px}
+    .lane-plant .lp-emoji{font-size:.75rem}
+    .pal-item{padding:.4rem .6rem;font-size:.8rem}
+}
+
+/* Touch-friendly: larger tap targets */
+@media(pointer:coarse){
+    .pal-item{padding:.6rem .8rem;min-height:44px}
+    .entry-item{min-height:44px}
+    .entry-del{width:32px;height:32px;font-size:.8rem}
+    .lane-ctrl-btn{min-height:40px}
+    .add-btn{min-height:44px}
+    .bed-back{min-height:40px}
+    .data-btn{min-height:36px}
+    .ac-item{min-height:44px;padding:.6rem .7rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1><span class="leaf">🌿</span> The Hutt's Family Garden</h1>
+    <div class="hdr-sub">Click any bed to open the planter</div>
+    <div class="hdr-stats" id="hdrStats"></div>
+</header>
+
+<!-- MAP VIEW -->
+<div id="mapView">
+    <div class="map-wrap">
+        <div class="map-hint">Click a bed to add &amp; arrange plants</div>
+        <div class="garden-map" id="gardenMap">
+            <div class="house">🏠 HOUSE</div>
+            <div class="map-tt" id="mapTT"></div>
+        </div>
+        <div class="map-legend" id="mapLegend"></div>
+    </div>
+</div>
+
+<!-- BED EDITOR -->
+<div id="bedEditor">
+    <div class="bed-editor">
+        <div class="bed-toolbar">
+            <button class="bed-back" onclick="closeBedEditor()">← Back to Map</button>
+            <span class="bed-title" id="bedTitle" ondblclick="startRenameBed()"></span>
+            <span class="bed-info" id="bedInfo"></span>
+        </div>
+        <div class="editor-body">
+            <div class="palette">
+                <div class="pal-header">🌱 Plant Palette</div>
+                <div class="pal-search"><input type="text" id="palSearch" placeholder="🔍 Search (e.g. Roma Tomato)..." autocomplete="off"></div>
+                <div class="pal-list" id="palList"></div>
+            </div>
+            <div class="grid-wrap">
+                <div class="lane-controls" id="laneControls"></div>
+                <div class="bed-visual" id="bedVisual"></div>
+                <div class="entries-panel">
+                    <div class="entries-header">
+                        <span>🌱 Planted Items</span>
+                        <span id="entryCount" style="font-size:.8rem;color:var(--text-light)"></span>
+                    </div>
+                    <ul class="entries-list" id="entriesList"></ul>
+                    <div class="add-row" id="addRow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="data-bar">
+    <button class="data-btn" onclick="exportData()">📥 Export JSON</button>
+    <button class="data-btn" onclick="document.getElementById('importFile').click()">📤 Import JSON</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="data-btn" onclick="resetData()">🔄 Reset All</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   PLANT DATABASE
+   ═══════════════════════════════════════════════ */
+const PLANTS = [
+  // Tomatoes
+  {crop:"Tomato",variety:"Roma",emoji:"🍅",color:"#c62828",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Cherry",emoji:"🍅",color:"#ef5350",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Grape",emoji:"🍅",color:"#e53935",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Beefsteak",emoji:"🍅",color:"#b71c1c",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Brandywine",emoji:"🍅",color:"#d32f2f",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Cherokee Purple",emoji:"🍅",color:"#880e4f",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"San Marzano",emoji:"🍅",color:"#c62828",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Early Girl",emoji:"🍅",color:"#e53935",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Better Boy",emoji:"🍅",color:"#d32f2f",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Heirloom Mix",emoji:"🍅",color:"#ad1457",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Sun Gold",emoji:"🍅",color:"#ff8f00",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Yellow Pear",emoji:"🍅",color:"#f9a825",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Black Krim",emoji:"🍅",color:"#4e342e",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"Celebrity",emoji:"🍅",color:"#e53935",cat:"Fruit Veg"},
+  {crop:"Tomato",variety:"(other)",emoji:"🍅",color:"#e53935",cat:"Fruit Veg"},
+  // Onions
+  {crop:"Onion",variety:"Yellow",emoji:"🧅",color:"#f9a825",cat:"Allium"},
+  {crop:"Onion",variety:"Red",emoji:"🧅",color:"#c62828",cat:"Allium"},
+  {crop:"Onion",variety:"White",emoji:"🧅",color:"#eeeeee",cat:"Allium"},
+  {crop:"Onion",variety:"Sweet",emoji:"🧅",color:"#fdd835",cat:"Allium"},
+  {crop:"Onion",variety:"Vidalia",emoji:"🧅",color:"#fff176",cat:"Allium"},
+  {crop:"Onion",variety:"Walla Walla",emoji:"🧅",color:"#fff59d",cat:"Allium"},
+  {crop:"Onion",variety:"Shallot",emoji:"🧅",color:"#d4a056",cat:"Allium"},
+  {crop:"Onion",variety:"(other)",emoji:"🧅",color:"#f9a825",cat:"Allium"},
+  {crop:"Green Onion",variety:"",emoji:"🧅",color:"#7cb342",cat:"Allium"},
+  // Peppers
+  {crop:"Bell Pepper",variety:"Red",emoji:"🫑",color:"#e53935",cat:"Fruit Veg"},
+  {crop:"Bell Pepper",variety:"Green",emoji:"🫑",color:"#43a047",cat:"Fruit Veg"},
+  {crop:"Bell Pepper",variety:"Yellow",emoji:"🫑",color:"#fdd835",cat:"Fruit Veg"},
+  {crop:"Bell Pepper",variety:"Orange",emoji:"🫑",color:"#ff8f00",cat:"Fruit Veg"},
+  {crop:"Bell Pepper",variety:"(other)",emoji:"🫑",color:"#43a047",cat:"Fruit Veg"},
+  {crop:"Jalapeño",variety:"",emoji:"🌶️",color:"#388e3c",cat:"Fruit Veg"},
+  {crop:"Habanero",variety:"",emoji:"🌶️",color:"#ff6f00",cat:"Fruit Veg"},
+  {crop:"Serrano",variety:"",emoji:"🌶️",color:"#2e7d32",cat:"Fruit Veg"},
+  {crop:"Cayenne",variety:"",emoji:"🌶️",color:"#d32f2f",cat:"Fruit Veg"},
+  {crop:"Poblano",variety:"",emoji:"🌶️",color:"#33691e",cat:"Fruit Veg"},
+  {crop:"Anaheim",variety:"",emoji:"🌶️",color:"#558b2f",cat:"Fruit Veg"},
+  {crop:"Thai Chili",variety:"",emoji:"🌶️",color:"#b71c1c",cat:"Fruit Veg"},
+  {crop:"Ghost Pepper",variety:"",emoji:"🌶️",color:"#bf360c",cat:"Fruit Veg"},
+  // Cucurbits
+  {crop:"Cucumber",variety:"Slicing",emoji:"🥒",color:"#558b2f",cat:"Vine"},
+  {crop:"Cucumber",variety:"Pickling",emoji:"🥒",color:"#689f38",cat:"Vine"},
+  {crop:"Cucumber",variety:"English",emoji:"🥒",color:"#33691e",cat:"Vine"},
+  {crop:"Cucumber",variety:"(other)",emoji:"🥒",color:"#558b2f",cat:"Vine"},
+  {crop:"Zucchini",variety:"",emoji:"🥒",color:"#689f38",cat:"Squash"},
+  {crop:"Yellow Squash",variety:"",emoji:"🎃",color:"#ffb300",cat:"Squash"},
+  {crop:"Butternut Squash",variety:"",emoji:"🎃",color:"#f4a460",cat:"Squash"},
+  {crop:"Acorn Squash",variety:"",emoji:"🎃",color:"#5d4037",cat:"Squash"},
+  {crop:"Spaghetti Squash",variety:"",emoji:"🎃",color:"#fdd835",cat:"Squash"},
+  {crop:"Pumpkin",variety:"",emoji:"🎃",color:"#ef6c00",cat:"Squash"},
+  {crop:"Watermelon",variety:"",emoji:"🍉",color:"#43a047",cat:"Melon"},
+  {crop:"Cantaloupe",variety:"",emoji:"🍈",color:"#f9a825",cat:"Melon"},
+  {crop:"Honeydew",variety:"",emoji:"🍈",color:"#c5e1a5",cat:"Melon"},
+  // Leafy greens
+  {crop:"Lettuce",variety:"Romaine",emoji:"🥬",color:"#558b2f",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Iceberg",emoji:"🥬",color:"#81c784",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Butterhead",emoji:"🥬",color:"#aed581",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Leaf",emoji:"🥬",color:"#7cb342",cat:"Leafy Green"},
+  {crop:"Spinach",variety:"",emoji:"🥬",color:"#2e7d32",cat:"Leafy Green"},
+  {crop:"Kale",variety:"",emoji:"🥬",color:"#1b5e20",cat:"Leafy Green"},
+  {crop:"Swiss Chard",variety:"",emoji:"🥬",color:"#c62828",cat:"Leafy Green"},
+  {crop:"Arugula",variety:"",emoji:"🥬",color:"#558b2f",cat:"Leafy Green"},
+  {crop:"Collard Greens",variety:"",emoji:"🥬",color:"#33691e",cat:"Leafy Green"},
+  {crop:"Bok Choy",variety:"",emoji:"🥬",color:"#7cb342",cat:"Leafy Green"},
+  {crop:"Cabbage",variety:"Green",emoji:"🥬",color:"#558b2f",cat:"Brassica"},
+  {crop:"Cabbage",variety:"Red",emoji:"🥬",color:"#7b1fa2",cat:"Brassica"},
+  // Root veg
+  {crop:"Carrot",variety:"Nantes",emoji:"🥕",color:"#ff8f00",cat:"Root Veg"},
+  {crop:"Carrot",variety:"Danvers",emoji:"🥕",color:"#f57c00",cat:"Root Veg"},
+  {crop:"Carrot",variety:"(other)",emoji:"🥕",color:"#ff8f00",cat:"Root Veg"},
+  {crop:"Radish",variety:"",emoji:"🔴",color:"#c62828",cat:"Root Veg"},
+  {crop:"Beet",variety:"",emoji:"🔴",color:"#880e4f",cat:"Root Veg"},
+  {crop:"Turnip",variety:"",emoji:"🥔",color:"#e8d5e0",cat:"Root Veg"},
+  {crop:"Parsnip",variety:"",emoji:"🥕",color:"#fff9c4",cat:"Root Veg"},
+  {crop:"Sweet Potato",variety:"",emoji:"🍠",color:"#e65100",cat:"Root Veg"},
+  {crop:"Potato",variety:"Russet",emoji:"🥔",color:"#a1887f",cat:"Root Veg"},
+  {crop:"Potato",variety:"Yukon Gold",emoji:"🥔",color:"#fdd835",cat:"Root Veg"},
+  {crop:"Potato",variety:"Red",emoji:"🥔",color:"#c62828",cat:"Root Veg"},
+  {crop:"Potato",variety:"(other)",emoji:"🥔",color:"#a1887f",cat:"Root Veg"},
+  // Alliums
+  {crop:"Garlic",variety:"Softneck",emoji:"🧄",color:"#f5f5dc",cat:"Allium"},
+  {crop:"Garlic",variety:"Hardneck",emoji:"🧄",color:"#efebe9",cat:"Allium"},
+  {crop:"Garlic",variety:"Elephant",emoji:"🧄",color:"#fafafa",cat:"Allium"},
+  {crop:"Garlic",variety:"(other)",emoji:"🧄",color:"#f5f5dc",cat:"Allium"},
+  {crop:"Leek",variety:"",emoji:"🥬",color:"#558b2f",cat:"Allium"},
+  {crop:"Chive",variety:"",emoji:"🌿",color:"#66bb6a",cat:"Allium"},
+  // Brassicas
+  {crop:"Broccoli",variety:"",emoji:"🥦",color:"#2e7d32",cat:"Brassica"},
+  {crop:"Cauliflower",variety:"",emoji:"🥦",color:"#eeeeee",cat:"Brassica"},
+  {crop:"Brussels Sprouts",variety:"",emoji:"🥬",color:"#689f38",cat:"Brassica"},
+  {crop:"Kohlrabi",variety:"",emoji:"🥬",color:"#c5e1a5",cat:"Brassica"},
+  // Legumes
+  {crop:"Green Bean",variety:"Bush",emoji:"🫘",color:"#33691e",cat:"Legume"},
+  {crop:"Green Bean",variety:"Pole",emoji:"🫘",color:"#2e7d32",cat:"Legume"},
+  {crop:"Green Bean",variety:"(other)",emoji:"🫘",color:"#33691e",cat:"Legume"},
+  {crop:"Snap Pea",variety:"",emoji:"🫛",color:"#7cb342",cat:"Legume"},
+  {crop:"Snow Pea",variety:"",emoji:"🫛",color:"#8bc34a",cat:"Legume"},
+  {crop:"Lima Bean",variety:"",emoji:"🫘",color:"#c5e1a5",cat:"Legume"},
+  // Misc
+  {crop:"Corn",variety:"Sweet",emoji:"🌽",color:"#fdd835",cat:"Grain"},
+  {crop:"Corn",variety:"(other)",emoji:"🌽",color:"#fdd835",cat:"Grain"},
+  {crop:"Eggplant",variety:"",emoji:"🍆",color:"#6a1b9a",cat:"Fruit Veg"},
+  {crop:"Okra",variety:"",emoji:"🌿",color:"#689f38",cat:"Fruit Veg"},
+  {crop:"Celery",variety:"",emoji:"🌿",color:"#aed581",cat:"Stem Veg"},
+  {crop:"Asparagus",variety:"",emoji:"🌿",color:"#558b2f",cat:"Stem Veg"},
+  {crop:"Rhubarb",variety:"",emoji:"🌿",color:"#c62828",cat:"Stem Veg"},
+  {crop:"Tomatillo",variety:"",emoji:"🍅",color:"#7cb342",cat:"Fruit Veg"},
+  {crop:"Artichoke",variety:"",emoji:"🌿",color:"#689f38",cat:"Thistle"},
+  // Herbs
+  {crop:"Basil",variety:"Sweet",emoji:"🌿",color:"#43a047",cat:"Herb"},
+  {crop:"Basil",variety:"Thai",emoji:"🌿",color:"#388e3c",cat:"Herb"},
+  {crop:"Basil",variety:"(other)",emoji:"🌿",color:"#43a047",cat:"Herb"},
+  {crop:"Cilantro",variety:"",emoji:"🌿",color:"#66bb6a",cat:"Herb"},
+  {crop:"Parsley",variety:"Flat-leaf",emoji:"🌿",color:"#388e3c",cat:"Herb"},
+  {crop:"Parsley",variety:"Curly",emoji:"🌿",color:"#43a047",cat:"Herb"},
+  {crop:"Dill",variety:"",emoji:"🌿",color:"#9ccc65",cat:"Herb"},
+  {crop:"Mint",variety:"",emoji:"🌿",color:"#00897b",cat:"Herb"},
+  {crop:"Rosemary",variety:"",emoji:"🌿",color:"#5d8a68",cat:"Herb"},
+  {crop:"Thyme",variety:"",emoji:"🌿",color:"#7c9a72",cat:"Herb"},
+  {crop:"Oregano",variety:"",emoji:"🌿",color:"#6d8b5e",cat:"Herb"},
+  {crop:"Sage",variety:"",emoji:"🌿",color:"#8fae83",cat:"Herb"},
+  {crop:"Lavender",variety:"",emoji:"💜",color:"#9c27b0",cat:"Herb"},
+  {crop:"Fennel",variety:"",emoji:"🌿",color:"#c5e1a5",cat:"Herb"},
+  // Berries
+  {crop:"Strawberry",variety:"",emoji:"🍓",color:"#e53935",cat:"Berry"},
+  {crop:"Blueberry",variety:"",emoji:"🫐",color:"#283593",cat:"Berry"},
+  {crop:"Raspberry",variety:"",emoji:"🍇",color:"#ad1457",cat:"Berry"},
+  {crop:"Blackberry",variety:"",emoji:"🍇",color:"#1a1a2e",cat:"Berry"},
+  // Flowers
+  {crop:"Sunflower",variety:"",emoji:"🌻",color:"#fdd835",cat:"Flower"},
+  {crop:"Marigold",variety:"",emoji:"🌼",color:"#ff8f00",cat:"Flower"},
+  {crop:"Nasturtium",variety:"",emoji:"🌺",color:"#ff6d00",cat:"Flower"},
+  {crop:"Zinnia",variety:"",emoji:"🌸",color:"#ec407a",cat:"Flower"},
+];
+
+PLANTS.forEach(p => {
+    p.displayName = (p.variety && p.variety !== "(other)")
+        ? `${p.variety} ${p.crop}`
+        : p.variety === "(other)" ? `${p.crop} (other)` : p.crop;
+    p._search = `${p.crop} ${p.variety} ${p.displayName} ${p.cat}`.toLowerCase();
+});
+
+function findPlant(crop, variety) {
+    return PLANTS.find(p => p.crop === crop && p.variety === variety)
+        || PLANTS.find(p => p.crop === crop)
+        || {crop,variety,displayName:crop,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
+}
+
+/* ═══════════════════════════════════════════════
+   GARDEN LAYOUT
+   Ground boxes: 2 wide × 3 deep
+   ═══════════════════════════════════════════════ */
+const BEDS = [
+    // Back tall (5) — along house
+    {id:"BT1",name:"Back Tall 1",type:"tall",mapPos:{left:"14%",top:"11%",w:"12%",h:"19%"}},
+    {id:"BT2",name:"Back Tall 2",type:"tall",mapPos:{left:"28%",top:"11%",w:"12%",h:"19%"}},
+    {id:"BT3",name:"Back Tall 3",type:"tall",mapPos:{left:"42%",top:"11%",w:"12%",h:"19%"}},
+    {id:"BT4",name:"Back Tall 4",type:"tall",mapPos:{left:"56%",top:"11%",w:"12%",h:"19%"}},
+    {id:"BT5",name:"Back Tall 5",type:"tall",mapPos:{left:"70%",top:"11%",w:"12%",h:"19%"}},
+    // Center ground (6) — 2 wide × 3 deep
+    {id:"CG1",name:"Ground 1",type:"ground",mapPos:{left:"20%",top:"36%",w:"18%",h:"12%"}},
+    {id:"CG2",name:"Ground 2",type:"ground",mapPos:{left:"42%",top:"36%",w:"18%",h:"12%"}},
+    {id:"CG3",name:"Ground 3",type:"ground",mapPos:{left:"20%",top:"50%",w:"18%",h:"12%"}},
+    {id:"CG4",name:"Ground 4",type:"ground",mapPos:{left:"42%",top:"50%",w:"18%",h:"12%"}},
+    {id:"CG5",name:"Ground 5",type:"ground",mapPos:{left:"20%",top:"64%",w:"18%",h:"12%"}},
+    {id:"CG6",name:"Ground 6",type:"ground",mapPos:{left:"42%",top:"64%",w:"18%",h:"12%"}},
+    // Right tall (4)
+    {id:"RT1",name:"Right Tall 1",type:"tall",mapPos:{left:"83%",top:"12%",w:"13%",h:"17%"}},
+    {id:"RT2",name:"Right Tall 2",type:"tall",mapPos:{left:"83%",top:"32%",w:"13%",h:"17%"}},
+    {id:"RT3",name:"Right Tall 3",type:"tall",mapPos:{left:"83%",top:"52%",w:"13%",h:"17%"}},
+    {id:"RT4",name:"Right Tall 4",type:"tall",mapPos:{left:"83%",top:"72%",w:"13%",h:"17%"}},
+];
+
+/* ═══════════════════════════════════════════════
+   STATE
+   Each bed has lanes (columns). Each lane has an
+   ordered list of plant entries.
+   entries: [{crop, variety, qty, lane}]
+   lanes: number of lanes (columns) in this bed
+   ═══════════════════════════════════════════════ */
+const STORAGE_KEY = "hutts-garden-v3";
+
+function defaultData() {
+    const d = {version:3, beds:{}};
+    BEDS.forEach(b => { d.beds[b.id] = {name:b.name, lanes:3, entries:[]}; });
+    return d;
+}
+
+function loadData() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            const d = JSON.parse(raw);
+            if (d.version === 3) {
+                BEDS.forEach(b => { if (!d.beds[b.id]) d.beds[b.id] = {name:b.name, lanes:3, entries:[]}; });
+                return d;
+            }
+        }
+    } catch(e){}
+    return defaultData();
+}
+
+let DATA = loadData();
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+
+/* ═══════════════════════════════════════════════
+   STATS
+   ═══════════════════════════════════════════════ */
+function calcStats() {
+    let total = 0;
+    const varieties = new Set();
+    Object.values(DATA.beds).forEach(b => {
+        b.entries.forEach(e => {
+            total += e.qty;
+            varieties.add(e.crop + "|" + e.variety);
+        });
+    });
+    return {beds:BEDS.length, total, varieties:varieties.size};
+}
+
+function renderStats() {
+    const s = calcStats();
+    document.getElementById("hdrStats").innerHTML =
+        `<div class="hdr-stat"><strong>${s.beds}</strong> beds</div>`+
+        `<div class="hdr-stat"><strong>${s.varieties}</strong> varieties</div>`+
+        `<div class="hdr-stat"><strong>${s.total}</strong> plants</div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   MAP
+   ═══════════════════════════════════════════════ */
+function renderMap() {
+    const map = document.getElementById("gardenMap");
+    map.querySelectorAll(".map-bed").forEach(e => e.remove());
+
+    BEDS.forEach(def => {
+        const bed = DATA.beds[def.id];
+        const el = document.createElement("div");
+        el.className = `map-bed ${def.type}`;
+        el.style.left = def.mapPos.left;
+        el.style.top = def.mapPos.top;
+        el.style.width = def.mapPos.w;
+        el.style.height = def.mapPos.h;
+
+        // Build lane-based mini visual
+        const laneData = buildLaneData(bed);
+        const vis = document.createElement("div");
+        vis.className = "map-bed-visual";
+        laneData.forEach(plants => {
+            const laneEl = document.createElement("div");
+            laneEl.className = "map-lane";
+            plants.forEach(p => {
+                const dot = document.createElement("div");
+                dot.className = "map-dot";
+                const info = findPlant(p.crop, p.variety);
+                dot.style.background = info.color;
+                laneEl.appendChild(dot);
+            });
+            vis.appendChild(laneEl);
+        });
+        el.appendChild(vis);
+
+        const lbl = document.createElement("div");
+        lbl.className = "map-bed-label";
+        lbl.textContent = bed.name;
+        el.appendChild(lbl);
+
+        el.addEventListener("click", () => openBedEditor(def.id));
+
+        // Tooltip
+        el.addEventListener("mouseenter", () => {
+            const tt = document.getElementById("mapTT");
+            const counts = {};
+            bed.entries.forEach(e => {
+                const info = findPlant(e.crop, e.variety);
+                const k = info.displayName;
+                counts[k] = (counts[k]||0) + e.qty;
+            });
+            const lines = Object.entries(counts);
+            tt.innerHTML = `<b>${bed.name}</b>` +
+                (lines.length ? lines.map(([n,c])=>`${n} ×${c}`).join("<br>") : "<i>Empty</i>");
+            tt.classList.add("vis");
+        });
+        el.addEventListener("mousemove", ev => {
+            const tt = document.getElementById("mapTT");
+            const r = map.getBoundingClientRect();
+            tt.style.left = (ev.clientX - r.left + 14) + "px";
+            tt.style.top = (ev.clientY - r.top - 12) + "px";
+        });
+        el.addEventListener("mouseleave", () => document.getElementById("mapTT").classList.remove("vis"));
+
+        map.appendChild(el);
+    });
+    renderLegend();
+}
+
+function buildLaneData(bed) {
+    // Returns array of arrays: laneData[laneIdx] = [{crop,variety}, ...]
+    const lanes = [];
+    for (let i = 0; i < bed.lanes; i++) lanes.push([]);
+    bed.entries.forEach(e => {
+        const l = Math.max(0, Math.min(e.lane - 1, bed.lanes - 1));
+        for (let i = 0; i < e.qty; i++) lanes[l].push({crop:e.crop, variety:e.variety});
+    });
+    return lanes;
+}
+
+function renderLegend() {
+    const used = new Map();
+    Object.values(DATA.beds).forEach(b => {
+        b.entries.forEach(e => {
+            const k = e.crop+"|"+e.variety;
+            if (!used.has(k)) used.set(k, findPlant(e.crop, e.variety));
+        });
+    });
+    const el = document.getElementById("mapLegend");
+    if (!used.size) { el.innerHTML='<span style="color:#9e9e9e;font-size:.8rem">Plant something to see the legend</span>'; return; }
+    el.innerHTML = Array.from(used.values()).sort((a,b)=>a.displayName.localeCompare(b.displayName))
+        .map(p=>`<div class="leg-item"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
+}
+
+/* ═══════════════════════════════════════════════
+   BED EDITOR
+   ═══════════════════════════════════════════════ */
+let currentBedId = null;
+let selectedPlant = null;
+
+function openBedEditor(bedId) {
+    currentBedId = bedId;
+    selectedPlant = null;
+    document.getElementById("mapView").style.display = "none";
+    document.getElementById("bedEditor").style.display = "block";
+    document.getElementById("palSearch").value = "";
+    renderBedEditor();
+}
+
+function closeBedEditor() {
+    document.getElementById("bedEditor").style.display = "none";
+    document.getElementById("mapView").style.display = "block";
+    currentBedId = null;
+    renderMap();
+    renderStats();
+}
+
+function renderBedEditor() {
+    if (!currentBedId) return;
+    const bed = DATA.beds[currentBedId];
+    document.getElementById("bedTitle").textContent = bed.name;
+
+    const totalPlants = bed.entries.reduce((s,e)=>s+e.qty, 0);
+    document.getElementById("bedInfo").textContent = `${bed.lanes} lanes · ${totalPlants} plants`;
+
+    renderPalette();
+    renderLaneControls();
+    renderBedVisual();
+    renderEntries();
+}
+
+/* Palette */
+function renderPalette(filter="") {
+    const list = document.getElementById("palList");
+    const q = filter.toLowerCase().trim();
+    const filtered = q ? PLANTS.filter(p=>p._search.includes(q)) : PLANTS;
+    list.innerHTML = filtered.map(p => {
+        const idx = PLANTS.indexOf(p);
+        const sel = selectedPlant === p ? " selected" : "";
+        return `<div class="pal-item${sel}" data-pidx="${idx}">
+            <div class="pal-dot" style="background:${p.color}"></div>
+            <span class="pal-emoji">${p.emoji}</span>
+            <span class="pal-name">${p.displayName}</span>
+            <span class="pal-cat">${p.cat}</span>
+        </div>`;
+    }).join("");
+
+    list.querySelectorAll(".pal-item").forEach(el => {
+        el.addEventListener("click", () => {
+            selectedPlant = PLANTS[parseInt(el.dataset.pidx)];
+            list.querySelectorAll(".pal-item").forEach(e=>e.classList.remove("selected"));
+            el.classList.add("selected");
+        });
+    });
+}
+
+document.getElementById("palSearch").addEventListener("input", e => renderPalette(e.target.value));
+
+/* Lane controls */
+function renderLaneControls() {
+    const bed = DATA.beds[currentBedId];
+    document.getElementById("laneControls").innerHTML = `
+        <button class="lane-ctrl-btn" onclick="changeLanes(-1)">➖ Remove Lane</button>
+        <span style="font-size:.85rem;font-weight:600;color:var(--text-light)">${bed.lanes} Lane${bed.lanes!==1?'s':''}</span>
+        <button class="lane-ctrl-btn" onclick="changeLanes(1)">➕ Add Lane</button>
+    `;
+}
+
+function changeLanes(delta) {
+    const bed = DATA.beds[currentBedId];
+    const newLanes = Math.max(1, Math.min(10, bed.lanes + delta));
+    bed.lanes = newLanes;
+    // Clamp any entries beyond lane count
+    bed.entries.forEach(e => { if (e.lane > newLanes) e.lane = newLanes; });
+    save();
+    renderBedEditor();
+}
+
+/* Bed visual */
+function renderBedVisual() {
+    const bed = DATA.beds[currentBedId];
+    const laneData = buildLaneData(bed);
+    const vis = document.getElementById("bedVisual");
+    vis.innerHTML = "";
+
+    for (let i = 0; i < bed.lanes; i++) {
+        const laneEl = document.createElement("div");
+        laneEl.className = "lane";
+
+        const hdr = document.createElement("div");
+        hdr.className = "lane-header";
+        // Name the lanes contextually
+        let laneName;
+        if (bed.lanes === 1) laneName = "Center";
+        else if (bed.lanes === 2) laneName = i === 0 ? "Left" : "Right";
+        else if (bed.lanes === 3) laneName = ["Left","Center","Right"][i];
+        else laneName = `Lane ${i+1}`;
+        hdr.textContent = laneName;
+        laneEl.appendChild(hdr);
+
+        // Render plants in this lane
+        const plants = laneData[i];
+        if (plants.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "lane-empty";
+            empty.textContent = "+";
+            empty.title = "Select a plant from the palette, then use Add below";
+            laneEl.appendChild(empty);
+        } else {
+            plants.forEach(p => {
+                const info = findPlant(p.crop, p.variety);
+                const dot = document.createElement("div");
+                dot.className = "lane-plant";
+                dot.style.background = info.color;
+                dot.innerHTML = `<span class="lp-emoji">${info.emoji}</span>`;
+                dot.title = info.displayName;
+                laneEl.appendChild(dot);
+            });
+        }
+
+        vis.appendChild(laneEl);
+    }
+}
+
+/* Entries list + add form */
+function renderEntries() {
+    const bed = DATA.beds[currentBedId];
+    const list = document.getElementById("entriesList");
+    const total = bed.entries.reduce((s,e)=>s+e.qty, 0);
+    document.getElementById("entryCount").textContent = `${total} plant${total!==1?'s':''}`;
+
+    if (!bed.entries.length) {
+        list.innerHTML = '<li class="entries-empty">No plants yet. Search the palette, then add below.</li>';
+    } else {
+        list.innerHTML = bed.entries.map((e, idx) => {
+            const info = findPlant(e.crop, e.variety);
+            let laneName;
+            if (bed.lanes === 1) laneName = "Center";
+            else if (bed.lanes === 2) laneName = e.lane === 1 ? "Left" : "Right";
+            else if (bed.lanes === 3) laneName = ["","Left","Center","Right"][e.lane] || `Lane ${e.lane}`;
+            else laneName = `Lane ${e.lane}`;
+            return `<li class="entry-item">
+                <div class="entry-dot" style="background:${info.color}"></div>
+                <span class="entry-emoji">${info.emoji}</span>
+                <span class="entry-name">${info.displayName}</span>
+                <span class="entry-lane">${laneName}</span>
+                <span class="entry-qty">×${e.qty}</span>
+                <button class="entry-del" title="Remove" onclick="removeEntry(${idx})">🗑️</button>
+            </li>`;
+        }).join("");
+    }
+
+    // Add form
+    const addRow = document.getElementById("addRow");
+    let laneOpts = "";
+    for (let i = 1; i <= bed.lanes; i++) {
+        let ln;
+        if (bed.lanes === 1) ln = "Center";
+        else if (bed.lanes === 2) ln = i===1?"Left":"Right";
+        else if (bed.lanes === 3) ln = ["","Left","Center","Right"][i];
+        else ln = `Lane ${i}`;
+        laneOpts += `<option value="${i}">${ln}</option>`;
+    }
+
+    addRow.innerHTML = `
+        <div class="search-wrap">
+            <input type="text" id="addSearch" placeholder="🔍 Search plant (e.g. Roma Tomato)..." autocomplete="off">
+            <div class="ac-list" id="addAC"></div>
+        </div>
+        <select id="addLane">${laneOpts}</select>
+        <input type="number" id="addQty" value="1" min="1" placeholder="Qty">
+        <button class="add-btn" onclick="addEntry()">+ Add</button>
+    `;
+
+    setupAddAutocomplete();
+}
+
+function removeEntry(idx) {
+    DATA.beds[currentBedId].entries.splice(idx, 1);
+    save();
+    renderBedEditor();
+}
+
+function addEntry() {
+    const input = document.getElementById("addSearch");
+    const name = input.value.trim();
+    if (!name) return;
+
+    // Try to find a matching plant
+    const match = PLANTS.find(p => p.displayName.toLowerCase() === name.toLowerCase())
+               || PLANTS.find(p => p._search.includes(name.toLowerCase()));
+
+    const crop = match ? match.crop : name;
+    const variety = match ? match.variety : "";
+    const lane = parseInt(document.getElementById("addLane").value) || 1;
+    const qty = parseInt(document.getElementById("addQty").value) || 1;
+
+    DATA.beds[currentBedId].entries.push({crop, variety, qty, lane});
+    save();
+    input.value = "";
+    renderBedEditor();
+}
+
+/* Autocomplete for add form */
+function setupAddAutocomplete() {
+    const input = document.getElementById("addSearch");
+    const list = document.getElementById("addAC");
+    let hlIdx = -1;
+
+    input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        if (!q) { list.classList.remove("vis"); return; }
+        const matches = PLANTS.filter(p=>p._search.includes(q)).slice(0,12);
+        if (!matches.length) { list.classList.remove("vis"); return; }
+        hlIdx = -1;
+        list.innerHTML = matches.map(p =>
+            `<div class="ac-item" data-name="${p.displayName}">
+                <span class="ac-e">${p.emoji}</span>
+                <span class="ac-n">${p.displayName}</span>
+                <span class="ac-c">${p.cat}</span>
+            </div>`).join("");
+        list.classList.add("vis");
+        list.querySelectorAll(".ac-item").forEach(it => {
+            it.addEventListener("mousedown", ev => {
+                ev.preventDefault();
+                input.value = it.dataset.name;
+                list.classList.remove("vis");
+            });
+        });
+    });
+
+    input.addEventListener("keydown", e => {
+        const items = list.querySelectorAll(".ac-item");
+        if (!list.classList.contains("vis") || !items.length) {
+            if (e.key === "Enter") { e.preventDefault(); addEntry(); }
+            return;
+        }
+        if (e.key === "ArrowDown") { e.preventDefault(); hlIdx = Math.min(hlIdx+1, items.length-1); items.forEach((it,i)=>it.classList.toggle("hl",i===hlIdx)); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); hlIdx = Math.max(hlIdx-1,0); items.forEach((it,i)=>it.classList.toggle("hl",i===hlIdx)); }
+        else if (e.key === "Enter") { e.preventDefault(); if(hlIdx>=0) { input.value=items[hlIdx].dataset.name; list.classList.remove("vis"); } else addEntry(); }
+        else if (e.key === "Escape") list.classList.remove("vis");
+    });
+    input.addEventListener("blur", () => setTimeout(()=>list.classList.remove("vis"), 150));
+}
+
+/* Rename bed */
+function startRenameBed() {
+    const el = document.getElementById("bedTitle");
+    const cur = el.textContent;
+    const inp = document.createElement("input");
+    inp.type="text"; inp.className="bed-title-input"; inp.value=cur;
+    el.replaceWith(inp); inp.focus(); inp.select();
+    function done() {
+        DATA.beds[currentBedId].name = inp.value.trim()||cur;
+        save();
+        const sp = document.createElement("span");
+        sp.className="bed-title"; sp.id="bedTitle"; sp.textContent=DATA.beds[currentBedId].name;
+        sp.ondblclick=startRenameBed;
+        inp.replaceWith(sp);
+        renderBedEditor();
+    }
+    inp.addEventListener("blur",done);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")done();if(e.key==="Escape"){inp.value=cur;done();}});
+}
+
+/* ═══════════════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════════════ */
+function exportData() {
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"}));
+    a.download="hutts-garden.json"; a.click();
+}
+function importData(ev) {
+    const f=ev.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=e=>{try{DATA=JSON.parse(e.target.result);save();renderMap();renderStats();if(currentBedId)renderBedEditor();alert("Imported!");}catch(err){alert("Invalid file");}};
+    r.readAsText(f); ev.target.value="";
+}
+function resetData() {
+    if(!confirm("Reset ALL garden data?"))return;
+    DATA=defaultData();save();
+    if(currentBedId)closeBedEditor();
+    renderMap();renderStats();
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+renderStats();
+renderMap();
+
+// Register service worker for PWA / offline support
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
