@@ -19,210 +19,116 @@
     --shadow:rgba(0,0,0,0.12);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+     padding-bottom:env(safe-area-inset-bottom,0)}
 
 /* Header */
-header{background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;padding:1.2rem 2rem;text-align:center;box-shadow:0 2px 8px var(--shadow)}
-header h1{font-size:1.8rem;font-weight:700}
+header{background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;padding:1rem 1.5rem;text-align:center;box-shadow:0 2px 8px var(--shadow);position:relative}
+header h1{font-size:1.6rem;font-weight:700}
 header h1 .leaf{color:var(--green-light)}
-.hdr-sub{font-size:.85rem;opacity:.8;margin-top:.2rem}
-.hdr-stats{display:flex;justify-content:center;gap:1.5rem;margin-top:.6rem;flex-wrap:wrap}
-.hdr-stat{background:rgba(255,255,255,.15);padding:.25rem .8rem;border-radius:20px;font-size:.8rem}
+.hdr-sub{font-size:.82rem;opacity:.8;margin-top:.15rem}
+.hdr-stats{display:flex;justify-content:center;gap:1rem;margin-top:.5rem;flex-wrap:wrap}
+.hdr-stat{background:rgba(255,255,255,.15);padding:.2rem .7rem;border-radius:20px;font-size:.78rem}
 .hdr-stat strong{color:var(--green-light)}
-
-/* Views */
-#mapView,#bedEditor{transition:opacity .2s}
-#bedEditor{display:none}
+.conn-status{position:absolute;top:.6rem;right:1rem;font-size:.7rem;padding:.15rem .5rem;border-radius:10px;background:rgba(0,0,0,.2)}
+.conn-ok{color:#a5d6a7}.conn-off{color:#ef9a9a}
 
 /* Garden Map */
-.map-wrap{max-width:1000px;margin:1.5rem auto;padding:0 1rem}
-.map-hint{text-align:center;color:var(--text-light);font-size:.9rem;margin-bottom:.8rem}
+.map-wrap{max-width:1000px;margin:1.2rem auto;padding:0 .8rem}
+.map-hint{text-align:center;color:var(--text-light);font-size:.85rem;margin-bottom:.6rem}
 .garden-map{position:relative;width:100%;padding-bottom:62.5%;background:linear-gradient(180deg,#c8e6c9,#a5d6a7 50%,#81c784);border-radius:14px;border:3px solid var(--wood);overflow:hidden;box-shadow:0 4px 16px var(--shadow)}
-.house{position:absolute;top:0;left:8%;right:8%;height:7%;background:linear-gradient(180deg,#78909c,#607d8b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:600;letter-spacing:1px;border-bottom:3px solid #546e7a}
+.house{position:absolute;top:0;left:8%;right:8%;height:7%;background:linear-gradient(180deg,#78909c,#607d8b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem;font-weight:600;letter-spacing:1px;border-bottom:3px solid #546e7a}
 
 /* Map beds */
-.map-bed{position:absolute;border-radius:5px;cursor:pointer;border:2px solid var(--wood);transition:transform .15s,box-shadow .15s;z-index:10;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px}
+.map-bed{position:absolute;border-radius:5px;cursor:pointer;border:2px solid var(--wood);transition:transform .15s,box-shadow .15s;z-index:10;overflow:hidden}
 .map-bed:hover{transform:scale(1.06);z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .map-bed.tall{background:var(--wood-light)}
 .map-bed.ground{background:#6d4c41}
-.map-bed-visual{width:90%;flex:1;min-height:0;display:flex;gap:1px;overflow:hidden;align-items:stretch}
-.map-lane{flex:1;display:flex;flex-direction:column;gap:1px;justify-content:start;min-width:0;overflow:hidden}
-.map-dot{border-radius:50%;flex-shrink:0;aspect-ratio:1;min-height:2px;max-height:8px}
-.map-bed-label{font-size:.45rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;line-height:1}
+.map-bed-label{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.45rem;font-weight:600;color:#fff;background:rgba(0,0,0,.35);padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-dot{position:absolute;border-radius:50%;width:6px;height:6px;transform:translate(-50%,-50%);pointer-events:none}
 
 /* Map tooltip */
-.map-tt{display:none;position:absolute;background:rgba(0,0,0,.88);color:#fff;padding:.5rem .7rem;border-radius:8px;font-size:.72rem;max-width:240px;z-index:100;pointer-events:none}
-.map-tt.vis{display:block}
-.map-tt b{display:block;margin-bottom:.2rem}
+.map-tt{position:absolute;background:rgba(30,30,30,.92);color:#fff;font-size:.75rem;line-height:1.4;padding:.5rem .7rem;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;max-width:200px}
+.map-tt.vis{opacity:1}
 
-/* Map legend */
-.map-legend{display:flex;justify-content:center;gap:1.2rem;margin-top:.8rem;flex-wrap:wrap}
-.leg-item{display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-light)}
-.leg-sw{width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+/* Legend */
+.legend{max-width:1000px;margin:.5rem auto;padding:0 1rem;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+.leg-item{display:flex;align-items:center;gap:.3rem;font-size:.75rem;background:var(--white);padding:.2rem .6rem;border-radius:12px;box-shadow:0 1px 3px var(--shadow)}
+.leg-sw{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 
-/* ═══ BED EDITOR ═══ */
-.bed-editor{max-width:1100px;margin:0 auto;padding:1rem}
-.bed-toolbar{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem}
-.bed-back{padding:.5rem 1rem;border:none;background:var(--white);border-radius:8px;cursor:pointer;font-weight:600;font-size:.85rem;box-shadow:0 1px 4px var(--shadow);display:flex;align-items:center;gap:.3rem}
-.bed-back:hover{background:#e8e8e8}
-.bed-title{font-size:1.3rem;font-weight:700;flex:1}
-.bed-title-input{font-size:1.3rem;font-weight:700;border:2px solid var(--green-mid);border-radius:6px;padding:.1rem .4rem;outline:none;width:220px}
-.bed-info{font-size:.8rem;color:var(--text-light)}
+/* ═══════ BED EDITOR ═══════ */
+#bedEditor{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;flex-direction:column;overflow:hidden}
+.ed-header{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;background:linear-gradient(135deg,var(--green-dark),var(--earth-mid));color:#fff;flex-shrink:0}
+.ed-back{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:1rem;padding:.4rem .8rem;border-radius:8px;cursor:pointer;min-height:44px}
+.bed-title{font-size:1.2rem;font-weight:700;flex:1}
+.bed-title-input{font-size:1.2rem;font-weight:700;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:.2rem .5rem;flex:1}
+.ed-count{font-size:.8rem;opacity:.8;white-space:nowrap}
 
-.editor-body{display:flex;gap:1.2rem;align-items:flex-start;flex-wrap:wrap}
+.ed-body{display:flex;flex:1;min-height:0;overflow:hidden}
 
-/* Palette */
-.palette{width:280px;background:var(--white);border-radius:12px;box-shadow:0 2px 8px var(--shadow);overflow:hidden;flex-shrink:0;max-height:80vh;display:flex;flex-direction:column}
-.pal-header{padding:.8rem 1rem;border-bottom:1px solid #e0e0e0;font-weight:700;font-size:.95rem}
-.pal-search{padding:.5rem .8rem}
-.pal-search input{width:100%;padding:.5rem .7rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.85rem;outline:none}
-.pal-search input:focus{border-color:var(--green-mid)}
-.pal-list{flex:1;overflow-y:auto;padding:.3rem 0}
-.pal-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;cursor:pointer;font-size:.82rem;transition:background .1s;border-left:3px solid transparent}
+/* Palette panel */
+.pal-panel{width:260px;flex-shrink:0;background:var(--white);border-right:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden}
+.pal-panel input[type="text"]{width:100%;padding:.6rem .8rem;border:none;border-bottom:2px solid var(--green-light);font-size:.9rem;outline:none}
+.pal-panel input[type="text"]:focus{border-bottom-color:var(--green-dark)}
+.pal-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pal-item{display:flex;align-items:center;gap:.5rem;padding:.5rem .8rem;cursor:pointer;border-bottom:1px solid #f5f5f5;min-height:44px}
 .pal-item:hover{background:var(--green-pale)}
-.pal-item.selected{background:#c8e6c9;border-left-color:var(--green-dark);font-weight:600}
-.pal-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
-.pal-emoji{font-size:1rem;flex-shrink:0}
-.pal-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pal-cat{font-size:.65rem;color:var(--text-light);margin-left:auto;white-space:nowrap}
+.pal-item.selected{background:#c8e6c9;border-left:3px solid var(--green-dark)}
+.pal-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.pal-emoji{font-size:1.1rem}
+.pal-name{flex:1;font-size:.85rem;font-weight:500}
+.pal-cat{font-size:.7rem;color:var(--text-light)}
 
-/* Bed visual + lane editor */
-.grid-wrap{flex:1;min-width:0}
+/* Bulk controls */
+.bulk-row{display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-top:2px solid #e0e0e0;flex-shrink:0;background:#fafafa}
+.bulk-row label{font-size:.8rem;font-weight:600;color:var(--text-light)}
+.bulk-row input[type="number"]{width:55px;padding:.3rem;border:1px solid #ccc;border-radius:6px;font-size:.9rem;text-align:center}
+.bulk-btn{flex:1;padding:.45rem .5rem;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:40px}
+.bulk-btn:active{background:var(--green-dark)}
 
-.bed-visual{background:var(--earth-dark);border-radius:10px;padding:8px;box-shadow:0 2px 10px var(--shadow);display:flex;gap:4px;min-height:120px;margin-bottom:1rem;position:relative;overflow:visible}
-.lane{flex:1;background:#5d4037;border-radius:4px;padding:4px;display:flex;flex-direction:column;gap:3px;min-width:50px;position:relative;transition:background .15s}
-.lane:hover{background:#6d4c41}
-.lane-header{text-align:center;font-size:.6rem;font-weight:700;color:rgba(255,255,255,.6);padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
-.lane-plant{display:flex;align-items:center;justify-content:center;border-radius:50%;aspect-ratio:1;width:100%;max-width:48px;margin:0 auto;cursor:pointer;position:relative;transition:transform .1s;border:2px solid rgba(255,255,255,.2);font-size:.7rem}
-.lane-plant:hover{transform:scale(1.1);border-color:rgba(255,255,255,.6)}
-.lane-plant .lp-emoji{font-size:1rem}
-.lane-plant .lp-label{position:absolute;bottom:-10px;font-size:.45rem;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none}
-.lane-empty{width:100%;max-width:48px;aspect-ratio:1;margin:0 auto;border-radius:50%;border:2px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.7rem;color:rgba(255,255,255,.3);transition:all .15s}
-.lane-empty:hover{border-color:rgba(255,255,255,.5);color:rgba(255,255,255,.6);background:rgba(255,255,255,.05)}
+/* Bed canvas */
+.canvas-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;min-width:0;overflow:auto;background:#e8f5e9}
+.bed-canvas{position:relative;width:100%;max-width:600px;padding-bottom:60%;background:linear-gradient(160deg,#5d4037 0%,#4e342e 60%,#3e2723 100%);border-radius:12px;border:4px solid var(--wood);touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair;box-shadow:inset 0 2px 8px rgba(0,0,0,.3),0 4px 12px var(--shadow)}
+.canvas-hint{text-align:center;font-size:.8rem;color:var(--text-light);margin-top:.6rem}
 
-/* Lane controls */
-.lane-controls{display:flex;justify-content:center;gap:.5rem;margin-bottom:.8rem}
-.lane-ctrl-btn{padding:.35rem .7rem;border:2px solid #e0e0e0;border-radius:8px;background:var(--white);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:.3rem}
-.lane-ctrl-btn:hover{border-color:var(--green-mid);background:var(--green-pale)}
+/* Plant circles on canvas */
+.plant-circle{position:absolute;width:40px;height:40px;border-radius:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;cursor:grab;z-index:1;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:box-shadow .12s,outline .12s;font-size:1rem;border:2px solid rgba(255,255,255,.3)}
+.plant-circle:hover{box-shadow:0 3px 10px rgba(0,0,0,.45);z-index:10}
+.plant-circle.dragging{cursor:grabbing;box-shadow:0 8px 20px rgba(0,0,0,.5);z-index:100;transition:none;transform:translate(-50%,-50%) scale(1.15)}
+.plant-circle.selected-plant{outline:3px solid #fff;outline-offset:2px;z-index:50}
+.plant-delete-btn{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#c62828;color:#fff;border:2px solid #fff;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200;line-height:1}
 
-/* Plant entries table */
-.entries-panel{background:var(--white);border-radius:12px;box-shadow:0 2px 8px var(--shadow);overflow:hidden}
-.entries-header{padding:.8rem 1rem;border-bottom:1px solid #e0e0e0;font-weight:700;font-size:.95rem;display:flex;align-items:center;justify-content:space-between}
-.entries-list{list-style:none;max-height:400px;overflow-y:auto}
-.entry-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;border-bottom:1px solid #f5f5f5;font-size:.85rem}
-.entry-item:last-child{border-bottom:none}
-.entry-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
-.entry-emoji{font-size:1rem;flex-shrink:0}
-.entry-name{font-weight:500;flex:1;min-width:0}
-.entry-name small{font-weight:400;color:var(--text-light);font-size:.75rem}
-.entry-lane{background:#e3f2fd;color:#1565c0;font-size:.7rem;font-weight:600;padding:.15rem .5rem;border-radius:10px;white-space:nowrap}
-.entry-qty{background:var(--green-pale);color:var(--green-dark);font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:10px}
-.entry-del{width:24px;height:24px;border-radius:6px;border:1px solid #e0e0e0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
-.entry-del:hover{background:#ffebee;border-color:#ef5350}
-.entries-empty{padding:1.5rem;text-align:center;color:var(--text-light);font-size:.85rem;font-style:italic}
-
-/* Add plant row */
-.add-row{padding:.8rem 1rem;border-top:1px solid #e0e0e0;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
-.add-row .search-wrap{position:relative;flex:1;min-width:140px}
-.add-row input[type=text]{width:100%;padding:.45rem .6rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;outline:none}
-.add-row input[type=text]:focus{border-color:var(--green-mid)}
-.add-row input[type=number]{width:55px;padding:.45rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;text-align:center;outline:none}
-.add-row input[type=number]:focus{border-color:var(--green-mid)}
-.add-row select{padding:.45rem .4rem;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;outline:none;background:#fff}
-.add-row select:focus{border-color:var(--green-mid)}
-.add-btn{padding:.45rem .8rem;background:var(--green-dark);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
-.add-btn:hover{background:var(--green-mid)}
-
-/* Autocomplete */
-.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 16px var(--shadow);display:none}
-.ac-list.vis{display:block}
-.ac-item{padding:.45rem .7rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;font-size:.82rem}
-.ac-item:hover,.ac-item.hl{background:var(--green-pale)}
-.ac-item .ac-e{font-size:.95rem}
-.ac-item .ac-n{font-weight:500}
-.ac-item .ac-c{font-size:.65rem;color:var(--text-light);margin-left:auto}
+/* Plant summary (bottom list) */
+.plant-summary{flex-shrink:0;max-height:30vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--white);border-top:2px solid #e0e0e0;padding:.5rem .8rem}
+.summary-title{font-size:.8rem;font-weight:700;color:var(--text-light);margin-bottom:.3rem}
+.summary-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid #f5f5f5;font-size:.85rem}
+.summary-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.summary-qty{font-weight:700;color:var(--green-dark);margin-left:auto;min-width:30px;text-align:right}
+.summary-del{background:none;border:none;font-size:1rem;cursor:pointer;padding:.2rem;min-height:36px;min-width:36px;display:flex;align-items:center;justify-content:center}
+.summary-empty{text-align:center;color:#9e9e9e;font-size:.85rem;padding:1rem}
 
 /* Data bar */
-.data-bar{display:flex;justify-content:center;gap:.5rem;padding:.8rem;background:var(--white);border-top:1px solid #e0e0e0}
-.data-btn{padding:.4rem .8rem;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer;font-size:.75rem;color:var(--text-light)}
-.data-btn:hover{background:#f5f5f5}
+.data-bar{display:flex;justify-content:center;gap:.8rem;padding:.8rem 1rem;flex-wrap:wrap}
+.data-btn{padding:.5rem 1rem;border:2px solid var(--green-mid);background:var(--white);color:var(--green-dark);border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.3rem}
+.data-btn:active{background:var(--green-pale)}
+.data-btn input[type="file"]{display:none}
 
+/* ═══════ MOBILE ═══════ */
 @media(max-width:700px){
-    body{padding-bottom:env(safe-area-inset-bottom)}
-    header{padding:1rem .8rem}
     header h1{font-size:1.3rem}
-    .hdr-sub{font-size:.75rem}
-    .hdr-stats{gap:.6rem}
-    .hdr-stat{font-size:.7rem;padding:.2rem .5rem}
-
-    .map-wrap{padding:0 .5rem;margin:1rem auto}
-    .map-hint{font-size:.8rem;margin-bottom:.5rem}
-    .garden-map{aspect-ratio:4/3;border-radius:10px}
+    .ed-body{flex-direction:column}
+    .pal-panel{width:100%;max-height:40vh;border-right:none;border-bottom:1px solid #e0e0e0}
+    .pal-list{max-height:20vh}
+    .canvas-wrap{padding:.5rem;min-height:250px}
+    .bed-canvas{max-width:100%}
+    .plant-circle{width:36px;height:36px;font-size:.9rem}
     .map-bed-label{font-size:.35rem}
-    .map-legend{gap:.6rem}
-    .leg-item{font-size:.7rem}
-
-    .bed-editor{padding:.6rem}
-    .bed-toolbar{gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap}
-    .bed-back{padding:.4rem .7rem;font-size:.8rem}
-    .bed-title{font-size:1.1rem}
-    .bed-info{font-size:.7rem}
-
-    .editor-body{flex-direction:column;gap:.8rem}
-    .palette{width:100%;max-height:none;border-radius:10px}
-    .pal-list{max-height:180px;overflow-y:auto}
-    .pal-item{padding:.5rem .8rem;font-size:.85rem}
-    .pal-search input{font-size:.9rem;padding:.55rem .7rem}
-
-    .lane-controls{gap:.3rem;margin-bottom:.5rem}
-    .lane-ctrl-btn{padding:.3rem .5rem;font-size:.72rem}
-    .bed-visual{padding:6px;gap:3px;min-height:100px}
-    .lane{padding:3px;min-width:40px}
-    .lane-header{font-size:.55rem}
-    .lane-plant{max-width:38px}
-    .lane-plant .lp-emoji{font-size:.85rem}
-    .lane-empty{max-width:38px}
-
-    .entries-panel{border-radius:10px}
-    .entries-header{padding:.7rem .8rem;font-size:.9rem}
-    .entry-item{padding:.5rem .8rem;gap:.4rem;font-size:.82rem}
-    .entry-emoji{font-size:.9rem}
-    .entry-lane{font-size:.65rem;padding:.1rem .4rem}
-    .entry-qty{font-size:.7rem;padding:.1rem .4rem}
-
-    .add-row{padding:.7rem .8rem;flex-wrap:wrap;gap:.4rem}
-    .add-row .search-wrap{min-width:100%;flex-basis:100%}
-    .add-row input[type=text]{font-size:.9rem;padding:.55rem .7rem}
-    .add-row input[type=number]{width:60px;font-size:.9rem;padding:.55rem}
-    .add-row select{font-size:.9rem;padding:.55rem .5rem;flex:1}
-    .add-btn{font-size:.85rem;padding:.55rem 1rem;flex:1}
-
-    .ac-list{max-height:180px}
-    .ac-item{padding:.55rem .7rem;font-size:.85rem}
-
-    .data-bar{padding:.6rem;gap:.3rem;flex-wrap:wrap}
-    .data-btn{font-size:.7rem;padding:.35rem .6rem}
 }
-
-/* Extra small phones */
 @media(max-width:380px){
+    header{padding:.8rem}
     header h1{font-size:1.1rem}
-    .bed-title{font-size:1rem}
-    .lane-plant{max-width:32px}
-    .lane-plant .lp-emoji{font-size:.75rem}
-    .pal-item{padding:.4rem .6rem;font-size:.8rem}
-}
-
-/* Touch-friendly: larger tap targets */
-@media(pointer:coarse){
-    .pal-item{padding:.6rem .8rem;min-height:44px}
-    .entry-item{min-height:44px}
-    .entry-del{width:32px;height:32px;font-size:.8rem}
-    .lane-ctrl-btn{min-height:40px}
-    .add-btn{min-height:44px}
-    .bed-back{min-height:40px}
-    .data-btn{min-height:36px}
-    .ac-item{min-height:44px;padding:.6rem .7rem}
+    .pal-panel{max-height:35vh}
+    .plant-circle{width:32px;height:32px;font-size:.8rem}
 }
 </style>
 </head>
@@ -230,58 +136,58 @@ header h1 .leaf{color:var(--green-light)}
 
 <header>
     <h1><span class="leaf">🌿</span> The Hutt's Family Garden</h1>
-    <div class="hdr-sub">Click any bed to open the planter</div>
-    <div class="hdr-stats" id="hdrStats"></div>
+    <div class="hdr-sub">Tap a bed to add &amp; arrange plants</div>
+    <div id="hdrStats" class="hdr-stats"></div>
+    <div id="connStatus" class="conn-status conn-off">Connecting…</div>
 </header>
 
-<!-- MAP VIEW -->
+<!-- ═══════ MAP VIEW ═══════ -->
 <div id="mapView">
     <div class="map-wrap">
-        <div class="map-hint">Click a bed to add &amp; arrange plants</div>
+        <p class="map-hint">Tap a bed to edit</p>
         <div class="garden-map" id="gardenMap">
-            <div class="house">🏠 HOUSE</div>
-            <div class="map-tt" id="mapTT"></div>
+            <div class="house">House</div>
+            <div id="mapTT" class="map-tt"></div>
         </div>
-        <div class="map-legend" id="mapLegend"></div>
     </div>
+    <div class="legend" id="mapLegend"></div>
 </div>
 
-<!-- BED EDITOR -->
+<!-- ═══════ BED EDITOR ═══════ -->
 <div id="bedEditor">
-    <div class="bed-editor">
-        <div class="bed-toolbar">
-            <button class="bed-back" onclick="closeBedEditor()">← Back to Map</button>
-            <span class="bed-title" id="bedTitle" ondblclick="startRenameBed()"></span>
-            <span class="bed-info" id="bedInfo"></span>
+    <div class="ed-header">
+        <button class="ed-back" onclick="closeBedEditor()">← Back</button>
+        <span class="bed-title" id="bedTitle" ondblclick="startRenameBed()">Bed</span>
+        <span class="ed-count" id="edCount">0 plants</span>
+    </div>
+    <div class="ed-body">
+        <div class="pal-panel">
+            <input type="text" id="palSearch" placeholder="🔍 Search (e.g. Roma Tomato)…" autocomplete="off">
+            <div class="pal-list" id="palList"></div>
+            <div class="bulk-row">
+                <label>Qty:</label>
+                <input type="number" id="bulkQty" value="1" min="1" max="99">
+                <button class="bulk-btn" onclick="bulkPlace()">Place in Grid</button>
+            </div>
         </div>
-        <div class="editor-body">
-            <div class="palette">
-                <div class="pal-header">🌱 Plant Palette</div>
-                <div class="pal-search"><input type="text" id="palSearch" placeholder="🔍 Search (e.g. Roma Tomato)..." autocomplete="off"></div>
-                <div class="pal-list" id="palList"></div>
-            </div>
-            <div class="grid-wrap">
-                <div class="lane-controls" id="laneControls"></div>
-                <div class="bed-visual" id="bedVisual"></div>
-                <div class="entries-panel">
-                    <div class="entries-header">
-                        <span>🌱 Planted Items</span>
-                        <span id="entryCount" style="font-size:.8rem;color:var(--text-light)"></span>
-                    </div>
-                    <ul class="entries-list" id="entriesList"></ul>
-                    <div class="add-row" id="addRow"></div>
-                </div>
-            </div>
+        <div class="canvas-wrap">
+            <div class="bed-canvas" id="bedCanvas"></div>
+            <div class="canvas-hint" id="canvasHint">Select a plant from the list, then tap inside the bed to place it</div>
         </div>
     </div>
+    <div class="plant-summary" id="plantSummary"></div>
 </div>
 
+<!-- Data bar -->
 <div class="data-bar">
     <button class="data-btn" onclick="exportData()">📥 Export JSON</button>
-    <button class="data-btn" onclick="document.getElementById('importFile').click()">📤 Import JSON</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <label class="data-btn">📤 Import JSON<input type="file" id="importFile" accept=".json" onchange="importData(event)"></label>
     <button class="data-btn" onclick="resetData()">🔄 Reset All</button>
 </div>
+
+<!-- Firebase SDK (compat for script-tag usage) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════
@@ -308,133 +214,118 @@ const PLANTS = [
   {crop:"Onion",variety:"Yellow",emoji:"🧅",color:"#f9a825",cat:"Allium"},
   {crop:"Onion",variety:"Red",emoji:"🧅",color:"#c62828",cat:"Allium"},
   {crop:"Onion",variety:"White",emoji:"🧅",color:"#eeeeee",cat:"Allium"},
-  {crop:"Onion",variety:"Sweet",emoji:"🧅",color:"#fdd835",cat:"Allium"},
-  {crop:"Onion",variety:"Vidalia",emoji:"🧅",color:"#fff176",cat:"Allium"},
-  {crop:"Onion",variety:"Walla Walla",emoji:"🧅",color:"#fff59d",cat:"Allium"},
-  {crop:"Onion",variety:"Shallot",emoji:"🧅",color:"#d4a056",cat:"Allium"},
-  {crop:"Onion",variety:"(other)",emoji:"🧅",color:"#f9a825",cat:"Allium"},
-  {crop:"Green Onion",variety:"",emoji:"🧅",color:"#7cb342",cat:"Allium"},
+  {crop:"Onion",variety:"Sweet Vidalia",emoji:"🧅",color:"#ffe082",cat:"Allium"},
+  {crop:"Onion",variety:"Green/Scallion",emoji:"🧅",color:"#66bb6a",cat:"Allium"},
+  {crop:"Onion",variety:"Shallot",emoji:"🧅",color:"#d4a574",cat:"Allium"},
+  {crop:"Onion",variety:"(other)",emoji:"🧅",color:"#fdd835",cat:"Allium"},
   // Peppers
-  {crop:"Bell Pepper",variety:"Red",emoji:"🫑",color:"#e53935",cat:"Fruit Veg"},
-  {crop:"Bell Pepper",variety:"Green",emoji:"🫑",color:"#43a047",cat:"Fruit Veg"},
-  {crop:"Bell Pepper",variety:"Yellow",emoji:"🫑",color:"#fdd835",cat:"Fruit Veg"},
-  {crop:"Bell Pepper",variety:"Orange",emoji:"🫑",color:"#ff8f00",cat:"Fruit Veg"},
-  {crop:"Bell Pepper",variety:"(other)",emoji:"🫑",color:"#43a047",cat:"Fruit Veg"},
-  {crop:"Jalapeño",variety:"",emoji:"🌶️",color:"#388e3c",cat:"Fruit Veg"},
-  {crop:"Habanero",variety:"",emoji:"🌶️",color:"#ff6f00",cat:"Fruit Veg"},
-  {crop:"Serrano",variety:"",emoji:"🌶️",color:"#2e7d32",cat:"Fruit Veg"},
-  {crop:"Cayenne",variety:"",emoji:"🌶️",color:"#d32f2f",cat:"Fruit Veg"},
-  {crop:"Poblano",variety:"",emoji:"🌶️",color:"#33691e",cat:"Fruit Veg"},
-  {crop:"Anaheim",variety:"",emoji:"🌶️",color:"#558b2f",cat:"Fruit Veg"},
-  {crop:"Thai Chili",variety:"",emoji:"🌶️",color:"#b71c1c",cat:"Fruit Veg"},
-  {crop:"Ghost Pepper",variety:"",emoji:"🌶️",color:"#bf360c",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Bell (Green)",emoji:"🫑",color:"#2e7d32",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Bell (Red)",emoji:"🫑",color:"#c62828",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Bell (Yellow)",emoji:"🫑",color:"#f9a825",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Bell (Orange)",emoji:"🫑",color:"#ef6c00",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Jalapeño",emoji:"🌶️",color:"#388e3c",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Habanero",emoji:"🌶️",color:"#ff6f00",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Serrano",emoji:"🌶️",color:"#2e7d32",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Poblano",emoji:"🌶️",color:"#33691e",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Banana",emoji:"🌶️",color:"#fdd835",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Cayenne",emoji:"🌶️",color:"#d32f2f",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"Ghost",emoji:"🌶️",color:"#b71c1c",cat:"Fruit Veg"},
+  {crop:"Pepper",variety:"(other)",emoji:"🫑",color:"#43a047",cat:"Fruit Veg"},
   // Cucurbits
-  {crop:"Cucumber",variety:"Slicing",emoji:"🥒",color:"#558b2f",cat:"Vine"},
-  {crop:"Cucumber",variety:"Pickling",emoji:"🥒",color:"#689f38",cat:"Vine"},
-  {crop:"Cucumber",variety:"English",emoji:"🥒",color:"#33691e",cat:"Vine"},
-  {crop:"Cucumber",variety:"(other)",emoji:"🥒",color:"#558b2f",cat:"Vine"},
-  {crop:"Zucchini",variety:"",emoji:"🥒",color:"#689f38",cat:"Squash"},
-  {crop:"Yellow Squash",variety:"",emoji:"🎃",color:"#ffb300",cat:"Squash"},
-  {crop:"Butternut Squash",variety:"",emoji:"🎃",color:"#f4a460",cat:"Squash"},
-  {crop:"Acorn Squash",variety:"",emoji:"🎃",color:"#5d4037",cat:"Squash"},
-  {crop:"Spaghetti Squash",variety:"",emoji:"🎃",color:"#fdd835",cat:"Squash"},
-  {crop:"Pumpkin",variety:"",emoji:"🎃",color:"#ef6c00",cat:"Squash"},
-  {crop:"Watermelon",variety:"",emoji:"🍉",color:"#43a047",cat:"Melon"},
-  {crop:"Cantaloupe",variety:"",emoji:"🍈",color:"#f9a825",cat:"Melon"},
-  {crop:"Honeydew",variety:"",emoji:"🍈",color:"#c5e1a5",cat:"Melon"},
+  {crop:"Cucumber",variety:"Slicing",emoji:"🥒",color:"#558b2f",cat:"Cucurbit"},
+  {crop:"Cucumber",variety:"Pickling",emoji:"🥒",color:"#689f38",cat:"Cucurbit"},
+  {crop:"Cucumber",variety:"English",emoji:"🥒",color:"#33691e",cat:"Cucurbit"},
+  {crop:"Cucumber",variety:"(other)",emoji:"🥒",color:"#558b2f",cat:"Cucurbit"},
+  {crop:"Zucchini",variety:"Green",emoji:"🥒",color:"#2e7d32",cat:"Cucurbit"},
+  {crop:"Zucchini",variety:"Yellow",emoji:"🥒",color:"#f9a825",cat:"Cucurbit"},
+  {crop:"Squash",variety:"Butternut",emoji:"🎃",color:"#e65100",cat:"Cucurbit"},
+  {crop:"Squash",variety:"Acorn",emoji:"🎃",color:"#33691e",cat:"Cucurbit"},
+  {crop:"Squash",variety:"Spaghetti",emoji:"🎃",color:"#fdd835",cat:"Cucurbit"},
+  {crop:"Squash",variety:"Yellow Summer",emoji:"🎃",color:"#ffca28",cat:"Cucurbit"},
+  {crop:"Pumpkin",variety:"Jack-o-Lantern",emoji:"🎃",color:"#e65100",cat:"Cucurbit"},
+  {crop:"Pumpkin",variety:"Sugar Pie",emoji:"🎃",color:"#bf360c",cat:"Cucurbit"},
+  {crop:"Watermelon",variety:"Crimson Sweet",emoji:"🍉",color:"#2e7d32",cat:"Cucurbit"},
+  {crop:"Watermelon",variety:"Sugar Baby",emoji:"🍉",color:"#1b5e20",cat:"Cucurbit"},
+  {crop:"Cantaloupe",variety:"Hale's Best",emoji:"🍈",color:"#f9a825",cat:"Cucurbit"},
   // Leafy greens
-  {crop:"Lettuce",variety:"Romaine",emoji:"🥬",color:"#558b2f",cat:"Leafy Green"},
-  {crop:"Lettuce",variety:"Iceberg",emoji:"🥬",color:"#81c784",cat:"Leafy Green"},
-  {crop:"Lettuce",variety:"Butterhead",emoji:"🥬",color:"#aed581",cat:"Leafy Green"},
-  {crop:"Lettuce",variety:"Leaf",emoji:"🥬",color:"#7cb342",cat:"Leafy Green"},
-  {crop:"Spinach",variety:"",emoji:"🥬",color:"#2e7d32",cat:"Leafy Green"},
-  {crop:"Kale",variety:"",emoji:"🥬",color:"#1b5e20",cat:"Leafy Green"},
-  {crop:"Swiss Chard",variety:"",emoji:"🥬",color:"#c62828",cat:"Leafy Green"},
-  {crop:"Arugula",variety:"",emoji:"🥬",color:"#558b2f",cat:"Leafy Green"},
-  {crop:"Collard Greens",variety:"",emoji:"🥬",color:"#33691e",cat:"Leafy Green"},
-  {crop:"Bok Choy",variety:"",emoji:"🥬",color:"#7cb342",cat:"Leafy Green"},
-  {crop:"Cabbage",variety:"Green",emoji:"🥬",color:"#558b2f",cat:"Brassica"},
-  {crop:"Cabbage",variety:"Red",emoji:"🥬",color:"#7b1fa2",cat:"Brassica"},
+  {crop:"Lettuce",variety:"Romaine",emoji:"🥬",color:"#7cb342",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Iceberg",emoji:"🥬",color:"#aed581",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Butter",emoji:"🥬",color:"#9ccc65",cat:"Leafy Green"},
+  {crop:"Lettuce",variety:"Leaf Mix",emoji:"🥬",color:"#689f38",cat:"Leafy Green"},
+  {crop:"Spinach",variety:"Bloomsdale",emoji:"🥬",color:"#2e7d32",cat:"Leafy Green"},
+  {crop:"Spinach",variety:"Baby",emoji:"🥬",color:"#388e3c",cat:"Leafy Green"},
+  {crop:"Kale",variety:"Curly",emoji:"🥬",color:"#1b5e20",cat:"Leafy Green"},
+  {crop:"Kale",variety:"Lacinato",emoji:"🥬",color:"#2e7d32",cat:"Leafy Green"},
+  {crop:"Swiss Chard",variety:"Rainbow",emoji:"🥬",color:"#ad1457",cat:"Leafy Green"},
+  {crop:"Arugula",variety:"Standard",emoji:"🥬",color:"#558b2f",cat:"Leafy Green"},
+  {crop:"Collard Greens",variety:"Georgia",emoji:"🥬",color:"#1b5e20",cat:"Leafy Green"},
   // Root veg
-  {crop:"Carrot",variety:"Nantes",emoji:"🥕",color:"#ff8f00",cat:"Root Veg"},
-  {crop:"Carrot",variety:"Danvers",emoji:"🥕",color:"#f57c00",cat:"Root Veg"},
-  {crop:"Carrot",variety:"(other)",emoji:"🥕",color:"#ff8f00",cat:"Root Veg"},
-  {crop:"Radish",variety:"",emoji:"🔴",color:"#c62828",cat:"Root Veg"},
-  {crop:"Beet",variety:"",emoji:"🔴",color:"#880e4f",cat:"Root Veg"},
-  {crop:"Turnip",variety:"",emoji:"🥔",color:"#e8d5e0",cat:"Root Veg"},
-  {crop:"Parsnip",variety:"",emoji:"🥕",color:"#fff9c4",cat:"Root Veg"},
-  {crop:"Sweet Potato",variety:"",emoji:"🍠",color:"#e65100",cat:"Root Veg"},
-  {crop:"Potato",variety:"Russet",emoji:"🥔",color:"#a1887f",cat:"Root Veg"},
-  {crop:"Potato",variety:"Yukon Gold",emoji:"🥔",color:"#fdd835",cat:"Root Veg"},
+  {crop:"Carrot",variety:"Nantes",emoji:"🥕",color:"#e65100",cat:"Root Veg"},
+  {crop:"Carrot",variety:"Danvers",emoji:"🥕",color:"#ef6c00",cat:"Root Veg"},
+  {crop:"Carrot",variety:"Purple",emoji:"🥕",color:"#6a1b9a",cat:"Root Veg"},
+  {crop:"Carrot",variety:"(other)",emoji:"🥕",color:"#e65100",cat:"Root Veg"},
+  {crop:"Radish",variety:"Cherry Belle",emoji:"🔴",color:"#c62828",cat:"Root Veg"},
+  {crop:"Radish",variety:"Daikon",emoji:"🔴",color:"#e0e0e0",cat:"Root Veg"},
+  {crop:"Beet",variety:"Detroit Dark Red",emoji:"🔴",color:"#880e4f",cat:"Root Veg"},
+  {crop:"Beet",variety:"Golden",emoji:"🔴",color:"#ff8f00",cat:"Root Veg"},
+  {crop:"Turnip",variety:"Purple Top",emoji:"🔴",color:"#7b1fa2",cat:"Root Veg"},
+  {crop:"Potato",variety:"Russet",emoji:"🥔",color:"#795548",cat:"Root Veg"},
+  {crop:"Potato",variety:"Yukon Gold",emoji:"🥔",color:"#f9a825",cat:"Root Veg"},
   {crop:"Potato",variety:"Red",emoji:"🥔",color:"#c62828",cat:"Root Veg"},
-  {crop:"Potato",variety:"(other)",emoji:"🥔",color:"#a1887f",cat:"Root Veg"},
-  // Alliums
-  {crop:"Garlic",variety:"Softneck",emoji:"🧄",color:"#f5f5dc",cat:"Allium"},
-  {crop:"Garlic",variety:"Hardneck",emoji:"🧄",color:"#efebe9",cat:"Allium"},
-  {crop:"Garlic",variety:"Elephant",emoji:"🧄",color:"#fafafa",cat:"Allium"},
-  {crop:"Garlic",variety:"(other)",emoji:"🧄",color:"#f5f5dc",cat:"Allium"},
-  {crop:"Leek",variety:"",emoji:"🥬",color:"#558b2f",cat:"Allium"},
-  {crop:"Chive",variety:"",emoji:"🌿",color:"#66bb6a",cat:"Allium"},
-  // Brassicas
-  {crop:"Broccoli",variety:"",emoji:"🥦",color:"#2e7d32",cat:"Brassica"},
-  {crop:"Cauliflower",variety:"",emoji:"🥦",color:"#eeeeee",cat:"Brassica"},
-  {crop:"Brussels Sprouts",variety:"",emoji:"🥬",color:"#689f38",cat:"Brassica"},
-  {crop:"Kohlrabi",variety:"",emoji:"🥬",color:"#c5e1a5",cat:"Brassica"},
+  {crop:"Sweet Potato",variety:"Beauregard",emoji:"🍠",color:"#e65100",cat:"Root Veg"},
   // Legumes
-  {crop:"Green Bean",variety:"Bush",emoji:"🫘",color:"#33691e",cat:"Legume"},
-  {crop:"Green Bean",variety:"Pole",emoji:"🫘",color:"#2e7d32",cat:"Legume"},
-  {crop:"Green Bean",variety:"(other)",emoji:"🫘",color:"#33691e",cat:"Legume"},
-  {crop:"Snap Pea",variety:"",emoji:"🫛",color:"#7cb342",cat:"Legume"},
-  {crop:"Snow Pea",variety:"",emoji:"🫛",color:"#8bc34a",cat:"Legume"},
-  {crop:"Lima Bean",variety:"",emoji:"🫘",color:"#c5e1a5",cat:"Legume"},
-  // Misc
-  {crop:"Corn",variety:"Sweet",emoji:"🌽",color:"#fdd835",cat:"Grain"},
-  {crop:"Corn",variety:"(other)",emoji:"🌽",color:"#fdd835",cat:"Grain"},
-  {crop:"Eggplant",variety:"",emoji:"🍆",color:"#6a1b9a",cat:"Fruit Veg"},
-  {crop:"Okra",variety:"",emoji:"🌿",color:"#689f38",cat:"Fruit Veg"},
-  {crop:"Celery",variety:"",emoji:"🌿",color:"#aed581",cat:"Stem Veg"},
-  {crop:"Asparagus",variety:"",emoji:"🌿",color:"#558b2f",cat:"Stem Veg"},
-  {crop:"Rhubarb",variety:"",emoji:"🌿",color:"#c62828",cat:"Stem Veg"},
-  {crop:"Tomatillo",variety:"",emoji:"🍅",color:"#7cb342",cat:"Fruit Veg"},
-  {crop:"Artichoke",variety:"",emoji:"🌿",color:"#689f38",cat:"Thistle"},
+  {crop:"Green Bean",variety:"Blue Lake",emoji:"🫘",color:"#558b2f",cat:"Legume"},
+  {crop:"Green Bean",variety:"Kentucky Wonder",emoji:"🫘",color:"#33691e",cat:"Legume"},
+  {crop:"Snap Pea",variety:"Sugar Snap",emoji:"🫛",color:"#7cb342",cat:"Legume"},
+  {crop:"Snow Pea",variety:"Oregon Sugar",emoji:"🫛",color:"#689f38",cat:"Legume"},
+  // Brassicas
+  {crop:"Broccoli",variety:"Calabrese",emoji:"🥦",color:"#2e7d32",cat:"Brassica"},
+  {crop:"Cauliflower",variety:"Snowball",emoji:"🥦",color:"#e0e0e0",cat:"Brassica"},
+  {crop:"Cabbage",variety:"Green",emoji:"🥬",color:"#558b2f",cat:"Brassica"},
+  {crop:"Cabbage",variety:"Red",emoji:"🥬",color:"#880e4f",cat:"Brassica"},
+  {crop:"Brussels Sprout",variety:"Long Island",emoji:"🥬",color:"#33691e",cat:"Brassica"},
   // Herbs
   {crop:"Basil",variety:"Sweet",emoji:"🌿",color:"#43a047",cat:"Herb"},
-  {crop:"Basil",variety:"Thai",emoji:"🌿",color:"#388e3c",cat:"Herb"},
-  {crop:"Basil",variety:"(other)",emoji:"🌿",color:"#43a047",cat:"Herb"},
-  {crop:"Cilantro",variety:"",emoji:"🌿",color:"#66bb6a",cat:"Herb"},
-  {crop:"Parsley",variety:"Flat-leaf",emoji:"🌿",color:"#388e3c",cat:"Herb"},
-  {crop:"Parsley",variety:"Curly",emoji:"🌿",color:"#43a047",cat:"Herb"},
-  {crop:"Dill",variety:"",emoji:"🌿",color:"#9ccc65",cat:"Herb"},
-  {crop:"Mint",variety:"",emoji:"🌿",color:"#00897b",cat:"Herb"},
-  {crop:"Rosemary",variety:"",emoji:"🌿",color:"#5d8a68",cat:"Herb"},
-  {crop:"Thyme",variety:"",emoji:"🌿",color:"#7c9a72",cat:"Herb"},
-  {crop:"Oregano",variety:"",emoji:"🌿",color:"#6d8b5e",cat:"Herb"},
-  {crop:"Sage",variety:"",emoji:"🌿",color:"#8fae83",cat:"Herb"},
-  {crop:"Lavender",variety:"",emoji:"💜",color:"#9c27b0",cat:"Herb"},
-  {crop:"Fennel",variety:"",emoji:"🌿",color:"#c5e1a5",cat:"Herb"},
-  // Berries
-  {crop:"Strawberry",variety:"",emoji:"🍓",color:"#e53935",cat:"Berry"},
-  {crop:"Blueberry",variety:"",emoji:"🫐",color:"#283593",cat:"Berry"},
-  {crop:"Raspberry",variety:"",emoji:"🍇",color:"#ad1457",cat:"Berry"},
-  {crop:"Blackberry",variety:"",emoji:"🍇",color:"#1a1a2e",cat:"Berry"},
-  // Flowers
-  {crop:"Sunflower",variety:"",emoji:"🌻",color:"#fdd835",cat:"Flower"},
-  {crop:"Marigold",variety:"",emoji:"🌼",color:"#ff8f00",cat:"Flower"},
-  {crop:"Nasturtium",variety:"",emoji:"🌺",color:"#ff6d00",cat:"Flower"},
-  {crop:"Zinnia",variety:"",emoji:"🌸",color:"#ec407a",cat:"Flower"},
+  {crop:"Basil",variety:"Thai",emoji:"🌿",color:"#2e7d32",cat:"Herb"},
+  {crop:"Cilantro",variety:"Slow Bolt",emoji:"🌿",color:"#66bb6a",cat:"Herb"},
+  {crop:"Parsley",variety:"Flat Leaf",emoji:"🌿",color:"#558b2f",cat:"Herb"},
+  {crop:"Parsley",variety:"Curly",emoji:"🌿",color:"#689f38",cat:"Herb"},
+  {crop:"Dill",variety:"Bouquet",emoji:"🌿",color:"#7cb342",cat:"Herb"},
+  {crop:"Mint",variety:"Spearmint",emoji:"🌿",color:"#00897b",cat:"Herb"},
+  {crop:"Rosemary",variety:"Tuscan Blue",emoji:"🌿",color:"#00695c",cat:"Herb"},
+  {crop:"Thyme",variety:"Common",emoji:"🌿",color:"#6d4c41",cat:"Herb"},
+  {crop:"Oregano",variety:"Greek",emoji:"🌿",color:"#558b2f",cat:"Herb"},
+  {crop:"Sage",variety:"Common",emoji:"🌿",color:"#78909c",cat:"Herb"},
+  {crop:"Chives",variety:"Common",emoji:"🌿",color:"#7cb342",cat:"Herb"},
+  // Other
+  {crop:"Corn",variety:"Sweet",emoji:"🌽",color:"#f9a825",cat:"Other"},
+  {crop:"Corn",variety:"Bicolor",emoji:"🌽",color:"#fdd835",cat:"Other"},
+  {crop:"Garlic",variety:"Softneck",emoji:"🧄",color:"#e0e0e0",cat:"Allium"},
+  {crop:"Garlic",variety:"Hardneck",emoji:"🧄",color:"#d7ccc8",cat:"Allium"},
+  {crop:"Asparagus",variety:"Jersey Knight",emoji:"🌱",color:"#558b2f",cat:"Other"},
+  {crop:"Eggplant",variety:"Black Beauty",emoji:"🍆",color:"#4a148c",cat:"Fruit Veg"},
+  {crop:"Eggplant",variety:"Japanese",emoji:"🍆",color:"#6a1b9a",cat:"Fruit Veg"},
+  {crop:"Okra",variety:"Clemson Spineless",emoji:"🌱",color:"#689f38",cat:"Other"},
+  {crop:"Strawberry",variety:"June-bearing",emoji:"🍓",color:"#c62828",cat:"Fruit"},
+  {crop:"Strawberry",variety:"Everbearing",emoji:"🍓",color:"#d32f2f",cat:"Fruit"},
+  {crop:"Blueberry",variety:"Highbush",emoji:"🫐",color:"#283593",cat:"Fruit"},
+  {crop:"Raspberry",variety:"Heritage",emoji:"🫐",color:"#ad1457",cat:"Fruit"},
+  {crop:"Sunflower",variety:"Mammoth",emoji:"🌻",color:"#f9a825",cat:"Flower"},
+  {crop:"Marigold",variety:"French",emoji:"🌼",color:"#ff8f00",cat:"Flower"},
+  {crop:"Zinnia",variety:"Mix",emoji:"🌸",color:"#e91e63",cat:"Flower"},
 ];
 
+// Build search index
 PLANTS.forEach(p => {
-    p.displayName = (p.variety && p.variety !== "(other)")
-        ? `${p.variety} ${p.crop}`
-        : p.variety === "(other)" ? `${p.crop} (other)` : p.crop;
+    p.displayName = p.variety && p.variety !== "(other)"
+        ? `${p.variety} ${p.crop}` : p.variety === "(other)" ? `${p.crop} (other)` : p.crop;
     p._search = `${p.crop} ${p.variety} ${p.displayName} ${p.cat}`.toLowerCase();
 });
 
 function findPlant(crop, variety) {
     return PLANTS.find(p => p.crop === crop && p.variety === variety)
         || PLANTS.find(p => p.crop === crop)
-        || {crop,variety,displayName:crop,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
+        || {crop,variety,displayName:crop+" "+variety,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
 }
 
 /* ═══════════════════════════════════════════════
@@ -442,20 +333,17 @@ function findPlant(crop, variety) {
    Ground boxes: 2 wide × 3 deep
    ═══════════════════════════════════════════════ */
 const BEDS = [
-    // Back tall (5) — along house
     {id:"BT1",name:"Back Tall 1",type:"tall",mapPos:{left:"14%",top:"11%",w:"12%",h:"19%"}},
     {id:"BT2",name:"Back Tall 2",type:"tall",mapPos:{left:"28%",top:"11%",w:"12%",h:"19%"}},
     {id:"BT3",name:"Back Tall 3",type:"tall",mapPos:{left:"42%",top:"11%",w:"12%",h:"19%"}},
     {id:"BT4",name:"Back Tall 4",type:"tall",mapPos:{left:"56%",top:"11%",w:"12%",h:"19%"}},
     {id:"BT5",name:"Back Tall 5",type:"tall",mapPos:{left:"70%",top:"11%",w:"12%",h:"19%"}},
-    // Center ground (6) — 2 wide × 3 deep
     {id:"CG1",name:"Ground 1",type:"ground",mapPos:{left:"20%",top:"36%",w:"18%",h:"12%"}},
     {id:"CG2",name:"Ground 2",type:"ground",mapPos:{left:"42%",top:"36%",w:"18%",h:"12%"}},
     {id:"CG3",name:"Ground 3",type:"ground",mapPos:{left:"20%",top:"50%",w:"18%",h:"12%"}},
     {id:"CG4",name:"Ground 4",type:"ground",mapPos:{left:"42%",top:"50%",w:"18%",h:"12%"}},
     {id:"CG5",name:"Ground 5",type:"ground",mapPos:{left:"20%",top:"64%",w:"18%",h:"12%"}},
     {id:"CG6",name:"Ground 6",type:"ground",mapPos:{left:"42%",top:"64%",w:"18%",h:"12%"}},
-    // Right tall (4)
     {id:"RT1",name:"Right Tall 1",type:"tall",mapPos:{left:"83%",top:"12%",w:"13%",h:"17%"}},
     {id:"RT2",name:"Right Tall 2",type:"tall",mapPos:{left:"83%",top:"32%",w:"13%",h:"17%"}},
     {id:"RT3",name:"Right Tall 3",type:"tall",mapPos:{left:"83%",top:"52%",w:"13%",h:"17%"}},
@@ -463,36 +351,113 @@ const BEDS = [
 ];
 
 /* ═══════════════════════════════════════════════
-   STATE
-   Each bed has lanes (columns). Each lane has an
-   ordered list of plant entries.
-   entries: [{crop, variety, qty, lane}]
-   lanes: number of lanes (columns) in this bed
+   FIREBASE + DATA LAYER
    ═══════════════════════════════════════════════ */
-const STORAGE_KEY = "hutts-garden-v3";
+const firebaseConfig = {
+    apiKey: "AIzaSyBcUNf10dYY7ELu5oqQ_EgHoa_BWKhuApY",
+    authDomain: "hutts-garden.firebaseapp.com",
+    databaseURL: "https://hutts-garden-default-rtdb.firebaseio.com",
+    projectId: "hutts-garden",
+    storageBucket: "hutts-garden.firebasestorage.app",
+    messagingSenderId: "170190272148",
+    appId: "1:170190272148:web:4021daea5e85da10b56681"
+};
 
-function defaultData() {
-    const d = {version:3, beds:{}};
-    BEDS.forEach(b => { d.beds[b.id] = {name:b.name, lanes:3, entries:[]}; });
-    return d;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const bedsRef = db.ref('gardens/hutts-family-garden/beds');
+
+let DATA = { beds: {} };
+let firebaseReady = false;
+
+function genId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return 'p' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-function loadData() {
+function defaultBeds() {
+    const beds = {};
+    BEDS.forEach(b => { beds[b.id] = { name: b.name, plants: {} }; });
+    return beds;
+}
+
+// Connection status
+db.ref('.info/connected').on('value', snap => {
+    const el = document.getElementById('connStatus');
+    if (snap.val()) {
+        el.textContent = '🟢 Online';
+        el.className = 'conn-status conn-ok';
+        firebaseReady = true;
+    } else {
+        el.textContent = '🔴 Offline';
+        el.className = 'conn-status conn-off';
+    }
+});
+
+// Listen for real-time updates
+bedsRef.on('value', snap => {
+    const val = snap.val();
+    if (val) {
+        // Ensure all beds exist
+        BEDS.forEach(b => {
+            if (!val[b.id]) val[b.id] = { name: b.name, plants: {} };
+            if (!val[b.id].plants) val[b.id].plants = {};
+        });
+        DATA.beds = val;
+    } else {
+        // First time — initialize
+        DATA.beds = defaultBeds();
+        bedsRef.set(DATA.beds);
+    }
+    renderMap();
+    renderStats();
+    if (currentBedId) renderBedCanvas();
+    if (currentBedId) renderPlantSummary();
+});
+
+// Also try to load from localStorage for migration
+(function checkMigration() {
+    const old = localStorage.getItem('hutts-garden-v3');
+    if (!old) return;
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            const d = JSON.parse(raw);
-            if (d.version === 3) {
-                BEDS.forEach(b => { if (!d.beds[b.id]) d.beds[b.id] = {name:b.name, lanes:3, entries:[]}; });
-                return d;
-            }
+        const d = JSON.parse(old);
+        if (d.version === 3 && Object.keys(d.beds).length) {
+            // We have old lane-based data — offer migration
+            setTimeout(() => {
+                if (confirm('Found existing garden data on this device. Upload it to the cloud so all devices can see it?')) {
+                    migrateV3toV4(d);
+                }
+                localStorage.removeItem('hutts-garden-v3');
+            }, 2000);
         }
-    } catch(e){}
-    return defaultData();
-}
+    } catch(e) {}
+})();
 
-let DATA = loadData();
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+function migrateV3toV4(oldData) {
+    const newBeds = {};
+    BEDS.forEach(def => {
+        const old = oldData.beds[def.id];
+        if (!old) { newBeds[def.id] = { name: def.name, plants: {} }; return; }
+        const plants = {};
+        const laneCount = old.lanes || 3;
+        old.entries.forEach(entry => {
+            const laneIdx = Math.max(0, Math.min(entry.lane - 1, laneCount - 1));
+            const laneX = laneCount === 1 ? 50 : 10 + (laneIdx / (laneCount - 1)) * 80;
+            for (let i = 0; i < entry.qty; i++) {
+                const id = genId();
+                const ySpread = entry.qty > 1 ? 8 + (i / (entry.qty - 1)) * 84 : 50;
+                plants[id] = {
+                    crop: entry.crop,
+                    variety: entry.variety,
+                    x: Math.round((laneX + (Math.random() - 0.5) * 6) * 10) / 10,
+                    y: Math.round(ySpread * 10) / 10
+                };
+            }
+        });
+        newBeds[def.id] = { name: old.name || def.name, plants };
+    });
+    bedsRef.set(newBeds);
+}
 
 /* ═══════════════════════════════════════════════
    STATS
@@ -501,24 +466,25 @@ function calcStats() {
     let total = 0;
     const varieties = new Set();
     Object.values(DATA.beds).forEach(b => {
-        b.entries.forEach(e => {
-            total += e.qty;
-            varieties.add(e.crop + "|" + e.variety);
+        if (!b.plants) return;
+        Object.values(b.plants).forEach(p => {
+            total++;
+            varieties.add(p.crop + "|" + p.variety);
         });
     });
-    return {beds:BEDS.length, total, varieties:varieties.size};
+    return { beds: BEDS.length, total, varieties: varieties.size };
 }
 
 function renderStats() {
     const s = calcStats();
     document.getElementById("hdrStats").innerHTML =
-        `<div class="hdr-stat"><strong>${s.beds}</strong> beds</div>`+
-        `<div class="hdr-stat"><strong>${s.varieties}</strong> varieties</div>`+
+        `<div class="hdr-stat"><strong>${s.beds}</strong> beds</div>` +
+        `<div class="hdr-stat"><strong>${s.varieties}</strong> varieties</div>` +
         `<div class="hdr-stat"><strong>${s.total}</strong> plants</div>`;
 }
 
 /* ═══════════════════════════════════════════════
-   MAP
+   MAP VIEW
    ═══════════════════════════════════════════════ */
 function renderMap() {
     const map = document.getElementById("gardenMap");
@@ -526,6 +492,7 @@ function renderMap() {
 
     BEDS.forEach(def => {
         const bed = DATA.beds[def.id];
+        if (!bed) return;
         const el = document.createElement("div");
         el.className = `map-bed ${def.type}`;
         el.style.left = def.mapPos.left;
@@ -533,23 +500,18 @@ function renderMap() {
         el.style.width = def.mapPos.w;
         el.style.height = def.mapPos.h;
 
-        // Build lane-based mini visual
-        const laneData = buildLaneData(bed);
-        const vis = document.createElement("div");
-        vis.className = "map-bed-visual";
-        laneData.forEach(plants => {
-            const laneEl = document.createElement("div");
-            laneEl.className = "map-lane";
-            plants.forEach(p => {
+        // Render plant dots at their x,y positions within the bed
+        if (bed.plants) {
+            Object.values(bed.plants).forEach(p => {
+                const info = findPlant(p.crop, p.variety);
                 const dot = document.createElement("div");
                 dot.className = "map-dot";
-                const info = findPlant(p.crop, p.variety);
                 dot.style.background = info.color;
-                laneEl.appendChild(dot);
+                dot.style.left = p.x + "%";
+                dot.style.top = p.y + "%";
+                el.appendChild(dot);
             });
-            vis.appendChild(laneEl);
-        });
-        el.appendChild(vis);
+        }
 
         const lbl = document.createElement("div");
         lbl.className = "map-bed-label";
@@ -562,14 +524,15 @@ function renderMap() {
         el.addEventListener("mouseenter", () => {
             const tt = document.getElementById("mapTT");
             const counts = {};
-            bed.entries.forEach(e => {
-                const info = findPlant(e.crop, e.variety);
-                const k = info.displayName;
-                counts[k] = (counts[k]||0) + e.qty;
-            });
+            if (bed.plants) {
+                Object.values(bed.plants).forEach(p => {
+                    const info = findPlant(p.crop, p.variety);
+                    counts[info.displayName] = (counts[info.displayName] || 0) + 1;
+                });
+            }
             const lines = Object.entries(counts);
-            tt.innerHTML = `<b>${bed.name}</b>` +
-                (lines.length ? lines.map(([n,c])=>`${n} ×${c}`).join("<br>") : "<i>Empty</i>");
+            tt.innerHTML = `<b>${bed.name}</b><br>` +
+                (lines.length ? lines.map(([n, c]) => `${n} ×${c}`).join("<br>") : "<i>Empty</i>");
             tt.classList.add("vis");
         });
         el.addEventListener("mousemove", ev => {
@@ -585,29 +548,19 @@ function renderMap() {
     renderLegend();
 }
 
-function buildLaneData(bed) {
-    // Returns array of arrays: laneData[laneIdx] = [{crop,variety}, ...]
-    const lanes = [];
-    for (let i = 0; i < bed.lanes; i++) lanes.push([]);
-    bed.entries.forEach(e => {
-        const l = Math.max(0, Math.min(e.lane - 1, bed.lanes - 1));
-        for (let i = 0; i < e.qty; i++) lanes[l].push({crop:e.crop, variety:e.variety});
-    });
-    return lanes;
-}
-
 function renderLegend() {
     const used = new Map();
     Object.values(DATA.beds).forEach(b => {
-        b.entries.forEach(e => {
-            const k = e.crop+"|"+e.variety;
-            if (!used.has(k)) used.set(k, findPlant(e.crop, e.variety));
+        if (!b.plants) return;
+        Object.values(b.plants).forEach(p => {
+            const k = p.crop + "|" + p.variety;
+            if (!used.has(k)) used.set(k, findPlant(p.crop, p.variety));
         });
     });
     const el = document.getElementById("mapLegend");
-    if (!used.size) { el.innerHTML='<span style="color:#9e9e9e;font-size:.8rem">Plant something to see the legend</span>'; return; }
-    el.innerHTML = Array.from(used.values()).sort((a,b)=>a.displayName.localeCompare(b.displayName))
-        .map(p=>`<div class="leg-item"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
+    if (!used.size) { el.innerHTML = '<span style="color:#9e9e9e;font-size:.8rem">Plant something to see the legend</span>'; return; }
+    el.innerHTML = Array.from(used.values()).sort((a, b) => a.displayName.localeCompare(b.displayName))
+        .map(p => `<div class="leg-item"><div class="leg-sw" style="background:${p.color}"></div>${p.emoji} ${p.displayName}</div>`).join("");
 }
 
 /* ═══════════════════════════════════════════════
@@ -615,44 +568,42 @@ function renderLegend() {
    ═══════════════════════════════════════════════ */
 let currentBedId = null;
 let selectedPlant = null;
+let selectedPlantId = null; // currently selected plant in the canvas
+let dragState = null;
 
 function openBedEditor(bedId) {
     currentBedId = bedId;
     selectedPlant = null;
+    selectedPlantId = null;
     document.getElementById("mapView").style.display = "none";
-    document.getElementById("bedEditor").style.display = "block";
+    document.querySelector(".data-bar").style.display = "none";
+    document.getElementById("bedEditor").style.display = "flex";
     document.getElementById("palSearch").value = "";
-    renderBedEditor();
+
+    const bed = DATA.beds[bedId];
+    document.getElementById("bedTitle").textContent = bed.name;
+
+    renderPalette();
+    renderBedCanvas();
+    renderPlantSummary();
 }
 
 function closeBedEditor() {
     document.getElementById("bedEditor").style.display = "none";
     document.getElementById("mapView").style.display = "block";
+    document.querySelector(".data-bar").style.display = "flex";
     currentBedId = null;
+    selectedPlantId = null;
     renderMap();
     renderStats();
 }
 
-function renderBedEditor() {
-    if (!currentBedId) return;
-    const bed = DATA.beds[currentBedId];
-    document.getElementById("bedTitle").textContent = bed.name;
-
-    const totalPlants = bed.entries.reduce((s,e)=>s+e.qty, 0);
-    document.getElementById("bedInfo").textContent = `${bed.lanes} lanes · ${totalPlants} plants`;
-
-    renderPalette();
-    renderLaneControls();
-    renderBedVisual();
-    renderEntries();
-}
-
-/* Palette */
-function renderPalette(filter="") {
+/* ─── Palette ─── */
+function renderPalette(filter) {
     const list = document.getElementById("palList");
-    const q = filter.toLowerCase().trim();
-    const filtered = q ? PLANTS.filter(p=>p._search.includes(q)) : PLANTS;
-    list.innerHTML = filtered.map(p => {
+    const q = (filter || "").toLowerCase().trim();
+    const filtered = q ? PLANTS.filter(p => p._search.includes(q)) : PLANTS;
+    list.innerHTML = filtered.map((p, i) => {
         const idx = PLANTS.indexOf(p);
         const sel = selectedPlant === p ? " selected" : "";
         return `<div class="pal-item${sel}" data-pidx="${idx}">
@@ -666,240 +617,314 @@ function renderPalette(filter="") {
     list.querySelectorAll(".pal-item").forEach(el => {
         el.addEventListener("click", () => {
             selectedPlant = PLANTS[parseInt(el.dataset.pidx)];
-            list.querySelectorAll(".pal-item").forEach(e=>e.classList.remove("selected"));
+            selectedPlantId = null; // deselect canvas plant when choosing from palette
+            list.querySelectorAll(".pal-item").forEach(e => e.classList.remove("selected"));
             el.classList.add("selected");
+            document.getElementById("canvasHint").textContent =
+                `Tap inside the bed to place ${selectedPlant.displayName}`;
+            renderBedCanvas(); // clear canvas selection
         });
     });
 }
 
 document.getElementById("palSearch").addEventListener("input", e => renderPalette(e.target.value));
 
-/* Lane controls */
-function renderLaneControls() {
+/* ─── Bed Canvas ─── */
+function renderBedCanvas() {
+    if (!currentBedId) return;
     const bed = DATA.beds[currentBedId];
-    document.getElementById("laneControls").innerHTML = `
-        <button class="lane-ctrl-btn" onclick="changeLanes(-1)">➖ Remove Lane</button>
-        <span style="font-size:.85rem;font-weight:600;color:var(--text-light)">${bed.lanes} Lane${bed.lanes!==1?'s':''}</span>
-        <button class="lane-ctrl-btn" onclick="changeLanes(1)">➕ Add Lane</button>
-    `;
+    const canvas = document.getElementById("bedCanvas");
+    canvas.innerHTML = "";
+
+    if (!bed.plants) return;
+
+    const plantCount = Object.keys(bed.plants).length;
+    document.getElementById("edCount").textContent = `${plantCount} plant${plantCount !== 1 ? 's' : ''}`;
+
+    Object.entries(bed.plants).forEach(([id, plant]) => {
+        const info = findPlant(plant.crop, plant.variety);
+        const el = document.createElement("div");
+        el.className = "plant-circle" + (id === selectedPlantId ? " selected-plant" : "");
+        el.dataset.plantId = id;
+        el.style.left = plant.x + "%";
+        el.style.top = plant.y + "%";
+        el.style.background = info.color;
+        el.innerHTML = `<span>${info.emoji}</span>`;
+        el.title = info.displayName;
+
+        // Delete button for selected plant
+        if (id === selectedPlantId) {
+            const del = document.createElement("div");
+            del.className = "plant-delete-btn";
+            del.textContent = "✕";
+            del.addEventListener("pointerdown", e => {
+                e.stopPropagation();
+                e.preventDefault();
+                deletePlant(currentBedId, id);
+            });
+            el.appendChild(del);
+        }
+
+        // Pointer events for drag
+        el.addEventListener("pointerdown", e => startDrag(e, id));
+
+        canvas.appendChild(el);
+    });
 }
 
-function changeLanes(delta) {
-    const bed = DATA.beds[currentBedId];
-    const newLanes = Math.max(1, Math.min(10, bed.lanes + delta));
-    bed.lanes = newLanes;
-    // Clamp any entries beyond lane count
-    bed.entries.forEach(e => { if (e.lane > newLanes) e.lane = newLanes; });
-    save();
-    renderBedEditor();
-}
+// Click on empty canvas space to place a new plant
+document.getElementById("bedCanvas").addEventListener("pointerdown", function(e) {
+    if (e.target !== this) return; // only direct clicks on canvas
+    if (!selectedPlant) return;
 
-/* Bed visual */
-function renderBedVisual() {
-    const bed = DATA.beds[currentBedId];
-    const laneData = buildLaneData(bed);
-    const vis = document.getElementById("bedVisual");
-    vis.innerHTML = "";
+    const rect = this.getBoundingClientRect();
+    const x = Math.round(((e.clientX - rect.left) / rect.width * 100) * 10) / 10;
+    const y = Math.round(((e.clientY - rect.top) / rect.height * 100) * 10) / 10;
+    const clamped_x = Math.max(3, Math.min(97, x));
+    const clamped_y = Math.max(3, Math.min(97, y));
 
-    for (let i = 0; i < bed.lanes; i++) {
-        const laneEl = document.createElement("div");
-        laneEl.className = "lane";
+    const id = genId();
+    const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x: clamped_x, y: clamped_y };
 
-        const hdr = document.createElement("div");
-        hdr.className = "lane-header";
-        // Name the lanes contextually
-        let laneName;
-        if (bed.lanes === 1) laneName = "Center";
-        else if (bed.lanes === 2) laneName = i === 0 ? "Left" : "Right";
-        else if (bed.lanes === 3) laneName = ["Left","Center","Right"][i];
-        else laneName = `Lane ${i+1}`;
-        hdr.textContent = laneName;
-        laneEl.appendChild(hdr);
+    if (!DATA.beds[currentBedId].plants) DATA.beds[currentBedId].plants = {};
+    DATA.beds[currentBedId].plants[id] = plantData;
+    bedsRef.child(`${currentBedId}/plants/${id}`).set(plantData);
 
-        // Render plants in this lane
-        const plants = laneData[i];
-        if (plants.length === 0) {
-            const empty = document.createElement("div");
-            empty.className = "lane-empty";
-            empty.textContent = "+";
-            empty.title = "Select a plant from the palette, then use Add below";
-            laneEl.appendChild(empty);
+    renderBedCanvas();
+    renderPlantSummary();
+});
+
+/* ─── Drag ─── */
+function startDrag(e, plantId) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If tapping the same plant, toggle selection
+    if (selectedPlantId === plantId && !dragState) {
+        selectedPlantId = null;
+        renderBedCanvas();
+        return;
+    }
+
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+
+    const canvas = document.getElementById("bedCanvas");
+    const rect = canvas.getBoundingClientRect();
+    let moved = false;
+
+    dragState = {
+        plantId,
+        el,
+        startX: e.clientX,
+        startY: e.clientY,
+        origLeft: parseFloat(el.style.left),
+        origTop: parseFloat(el.style.top),
+        rect
+    };
+
+    el.classList.add("dragging");
+
+    function onMove(ev) {
+        if (!dragState) return;
+        const dx = (ev.clientX - dragState.startX) / dragState.rect.width * 100;
+        const dy = (ev.clientY - dragState.startY) / dragState.rect.height * 100;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+
+        const newX = Math.max(3, Math.min(97, dragState.origLeft + dx));
+        const newY = Math.max(3, Math.min(97, dragState.origTop + dy));
+        el.style.left = newX + "%";
+        el.style.top = newY + "%";
+    }
+
+    function onUp(ev) {
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+        el.removeEventListener("lostpointercapture", onUp);
+        el.classList.remove("dragging");
+
+        if (moved && dragState) {
+            const newX = Math.round(parseFloat(el.style.left) * 10) / 10;
+            const newY = Math.round(parseFloat(el.style.top) * 10) / 10;
+            const bed = DATA.beds[currentBedId];
+            if (bed.plants[dragState.plantId]) {
+                bed.plants[dragState.plantId].x = newX;
+                bed.plants[dragState.plantId].y = newY;
+                bedsRef.child(`${currentBedId}/plants/${dragState.plantId}`).update({ x: newX, y: newY });
+            }
         } else {
-            plants.forEach(p => {
-                const info = findPlant(p.crop, p.variety);
-                const dot = document.createElement("div");
-                dot.className = "lane-plant";
-                dot.style.background = info.color;
-                dot.innerHTML = `<span class="lp-emoji">${info.emoji}</span>`;
-                dot.title = info.displayName;
-                laneEl.appendChild(dot);
-            });
+            // It was a tap — select the plant
+            selectedPlantId = plantId;
+            selectedPlant = null; // deselect palette
+            document.querySelectorAll(".pal-item").forEach(e => e.classList.remove("selected"));
+            document.getElementById("canvasHint").textContent = "Tap ✕ to delete, or drag to move";
+            renderBedCanvas();
         }
-
-        vis.appendChild(laneEl);
+        dragState = null;
     }
+
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+    el.addEventListener("lostpointercapture", onUp);
 }
 
-/* Entries list + add form */
-function renderEntries() {
+function deletePlant(bedId, plantId) {
+    if (DATA.beds[bedId].plants[plantId]) {
+        delete DATA.beds[bedId].plants[plantId];
+        bedsRef.child(`${bedId}/plants/${plantId}`).remove();
+    }
+    if (selectedPlantId === plantId) selectedPlantId = null;
+    renderBedCanvas();
+    renderPlantSummary();
+}
+
+/* ─── Bulk Place (auto-arrange in grid) ─── */
+function bulkPlace() {
+    if (!selectedPlant) { alert("Select a plant from the palette first"); return; }
+    const qty = Math.min(99, Math.max(1, parseInt(document.getElementById("bulkQty").value) || 1));
+    if (!currentBedId) return;
+
     const bed = DATA.beds[currentBedId];
-    const list = document.getElementById("entriesList");
-    const total = bed.entries.reduce((s,e)=>s+e.qty, 0);
-    document.getElementById("entryCount").textContent = `${total} plant${total!==1?'s':''}`;
+    if (!bed.plants) bed.plants = {};
 
-    if (!bed.entries.length) {
-        list.innerHTML = '<li class="entries-empty">No plants yet. Search the palette, then add below.</li>';
-    } else {
-        list.innerHTML = bed.entries.map((e, idx) => {
-            const info = findPlant(e.crop, e.variety);
-            let laneName;
-            if (bed.lanes === 1) laneName = "Center";
-            else if (bed.lanes === 2) laneName = e.lane === 1 ? "Left" : "Right";
-            else if (bed.lanes === 3) laneName = ["","Left","Center","Right"][e.lane] || `Lane ${e.lane}`;
-            else laneName = `Lane ${e.lane}`;
-            return `<li class="entry-item">
-                <div class="entry-dot" style="background:${info.color}"></div>
-                <span class="entry-emoji">${info.emoji}</span>
-                <span class="entry-name">${info.displayName}</span>
-                <span class="entry-lane">${laneName}</span>
-                <span class="entry-qty">×${e.qty}</span>
-                <button class="entry-del" title="Remove" onclick="removeEntry(${idx})">🗑️</button>
-            </li>`;
-        }).join("");
-    }
+    const cols = Math.ceil(Math.sqrt(qty));
+    const rows = Math.ceil(qty / cols);
+    const updates = {};
+    let count = 0;
 
-    // Add form
-    const addRow = document.getElementById("addRow");
-    let laneOpts = "";
-    for (let i = 1; i <= bed.lanes; i++) {
-        let ln;
-        if (bed.lanes === 1) ln = "Center";
-        else if (bed.lanes === 2) ln = i===1?"Left":"Right";
-        else if (bed.lanes === 3) ln = ["","Left","Center","Right"][i];
-        else ln = `Lane ${i}`;
-        laneOpts += `<option value="${i}">${ln}</option>`;
-    }
-
-    addRow.innerHTML = `
-        <div class="search-wrap">
-            <input type="text" id="addSearch" placeholder="🔍 Search plant (e.g. Roma Tomato)..." autocomplete="off">
-            <div class="ac-list" id="addAC"></div>
-        </div>
-        <select id="addLane">${laneOpts}</select>
-        <input type="number" id="addQty" value="1" min="1" placeholder="Qty">
-        <button class="add-btn" onclick="addEntry()">+ Add</button>
-    `;
-
-    setupAddAutocomplete();
-}
-
-function removeEntry(idx) {
-    DATA.beds[currentBedId].entries.splice(idx, 1);
-    save();
-    renderBedEditor();
-}
-
-function addEntry() {
-    const input = document.getElementById("addSearch");
-    const name = input.value.trim();
-    if (!name) return;
-
-    // Try to find a matching plant
-    const match = PLANTS.find(p => p.displayName.toLowerCase() === name.toLowerCase())
-               || PLANTS.find(p => p._search.includes(name.toLowerCase()));
-
-    const crop = match ? match.crop : name;
-    const variety = match ? match.variety : "";
-    const lane = parseInt(document.getElementById("addLane").value) || 1;
-    const qty = parseInt(document.getElementById("addQty").value) || 1;
-
-    DATA.beds[currentBedId].entries.push({crop, variety, qty, lane});
-    save();
-    input.value = "";
-    renderBedEditor();
-}
-
-/* Autocomplete for add form */
-function setupAddAutocomplete() {
-    const input = document.getElementById("addSearch");
-    const list = document.getElementById("addAC");
-    let hlIdx = -1;
-
-    input.addEventListener("input", () => {
-        const q = input.value.trim().toLowerCase();
-        if (!q) { list.classList.remove("vis"); return; }
-        const matches = PLANTS.filter(p=>p._search.includes(q)).slice(0,12);
-        if (!matches.length) { list.classList.remove("vis"); return; }
-        hlIdx = -1;
-        list.innerHTML = matches.map(p =>
-            `<div class="ac-item" data-name="${p.displayName}">
-                <span class="ac-e">${p.emoji}</span>
-                <span class="ac-n">${p.displayName}</span>
-                <span class="ac-c">${p.cat}</span>
-            </div>`).join("");
-        list.classList.add("vis");
-        list.querySelectorAll(".ac-item").forEach(it => {
-            it.addEventListener("mousedown", ev => {
-                ev.preventDefault();
-                input.value = it.dataset.name;
-                list.classList.remove("vis");
-            });
-        });
-    });
-
-    input.addEventListener("keydown", e => {
-        const items = list.querySelectorAll(".ac-item");
-        if (!list.classList.contains("vis") || !items.length) {
-            if (e.key === "Enter") { e.preventDefault(); addEntry(); }
-            return;
+    for (let r = 0; r < rows && count < qty; r++) {
+        for (let c = 0; c < cols && count < qty; c++) {
+            const id = genId();
+            const x = cols === 1 ? 50 : Math.round((10 + (c / (cols - 1)) * 80) * 10) / 10;
+            const y = rows === 1 ? 50 : Math.round((10 + (r / (rows - 1)) * 80) * 10) / 10;
+            const plantData = { crop: selectedPlant.crop, variety: selectedPlant.variety, x, y };
+            bed.plants[id] = plantData;
+            updates[id] = plantData;
+            count++;
         }
-        if (e.key === "ArrowDown") { e.preventDefault(); hlIdx = Math.min(hlIdx+1, items.length-1); items.forEach((it,i)=>it.classList.toggle("hl",i===hlIdx)); }
-        else if (e.key === "ArrowUp") { e.preventDefault(); hlIdx = Math.max(hlIdx-1,0); items.forEach((it,i)=>it.classList.toggle("hl",i===hlIdx)); }
-        else if (e.key === "Enter") { e.preventDefault(); if(hlIdx>=0) { input.value=items[hlIdx].dataset.name; list.classList.remove("vis"); } else addEntry(); }
-        else if (e.key === "Escape") list.classList.remove("vis");
-    });
-    input.addEventListener("blur", () => setTimeout(()=>list.classList.remove("vis"), 150));
+    }
+
+    bedsRef.child(`${currentBedId}/plants`).update(updates);
+    renderBedCanvas();
+    renderPlantSummary();
 }
 
-/* Rename bed */
+/* ─── Plant Summary (grouped list below canvas) ─── */
+function renderPlantSummary() {
+    if (!currentBedId) return;
+    const bed = DATA.beds[currentBedId];
+    const el = document.getElementById("plantSummary");
+
+    if (!bed.plants || !Object.keys(bed.plants).length) {
+        el.innerHTML = '<div class="summary-empty">No plants yet — select from the list and tap the bed</div>';
+        return;
+    }
+
+    // Group by crop+variety
+    const groups = {};
+    Object.entries(bed.plants).forEach(([id, p]) => {
+        const key = p.crop + "|" + p.variety;
+        if (!groups[key]) groups[key] = { crop: p.crop, variety: p.variety, ids: [] };
+        groups[key].ids.push(id);
+    });
+
+    const sorted = Object.values(groups).sort((a, b) => {
+        const ai = findPlant(a.crop, a.variety);
+        const bi = findPlant(b.crop, b.variety);
+        return ai.displayName.localeCompare(bi.displayName);
+    });
+
+    el.innerHTML = `<div class="summary-title">Plants in this bed</div>` +
+        sorted.map(g => {
+            const info = findPlant(g.crop, g.variety);
+            return `<div class="summary-item">
+                <div class="summary-dot" style="background:${info.color}"></div>
+                <span>${info.emoji}</span>
+                <span>${info.displayName}</span>
+                <span class="summary-qty">×${g.ids.length}</span>
+                <button class="summary-del" title="Remove all ${info.displayName}" onclick="deleteGroup('${g.crop}','${g.variety}')">🗑️</button>
+            </div>`;
+        }).join("");
+}
+
+function deleteGroup(crop, variety) {
+    if (!currentBedId) return;
+    const bed = DATA.beds[currentBedId];
+    if (!bed.plants) return;
+
+    const info = findPlant(crop, variety);
+    if (!confirm(`Remove all ${info.displayName} from this bed?`)) return;
+
+    const toDelete = {};
+    Object.entries(bed.plants).forEach(([id, p]) => {
+        if (p.crop === crop && p.variety === variety) {
+            toDelete[id] = null;
+            delete bed.plants[id];
+        }
+    });
+
+    bedsRef.child(`${currentBedId}/plants`).update(toDelete);
+    if (selectedPlantId && !bed.plants[selectedPlantId]) selectedPlantId = null;
+    renderBedCanvas();
+    renderPlantSummary();
+}
+
+/* ─── Rename bed ─── */
 function startRenameBed() {
     const el = document.getElementById("bedTitle");
     const cur = el.textContent;
     const inp = document.createElement("input");
-    inp.type="text"; inp.className="bed-title-input"; inp.value=cur;
+    inp.type = "text"; inp.className = "bed-title-input"; inp.value = cur;
     el.replaceWith(inp); inp.focus(); inp.select();
     function done() {
-        DATA.beds[currentBedId].name = inp.value.trim()||cur;
-        save();
+        const newName = inp.value.trim() || cur;
+        DATA.beds[currentBedId].name = newName;
+        bedsRef.child(`${currentBedId}/name`).set(newName);
         const sp = document.createElement("span");
-        sp.className="bed-title"; sp.id="bedTitle"; sp.textContent=DATA.beds[currentBedId].name;
-        sp.ondblclick=startRenameBed;
+        sp.className = "bed-title"; sp.id = "bedTitle"; sp.textContent = newName;
+        sp.ondblclick = startRenameBed;
         inp.replaceWith(sp);
-        renderBedEditor();
     }
-    inp.addEventListener("blur",done);
-    inp.addEventListener("keydown",e=>{if(e.key==="Enter")done();if(e.key==="Escape"){inp.value=cur;done();}});
+    inp.addEventListener("blur", done);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") done(); if (e.key === "Escape") { inp.value = cur; done(); } });
 }
 
 /* ═══════════════════════════════════════════════
-   DATA
+   EXPORT / IMPORT / RESET
    ═══════════════════════════════════════════════ */
 function exportData() {
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"}));
-    a.download="hutts-garden.json"; a.click();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 4, beds: DATA.beds }, null, 2)], { type: "application/json" }));
+    a.download = "hutts-garden.json"; a.click();
 }
+
 function importData(ev) {
-    const f=ev.target.files[0]; if(!f)return;
-    const r=new FileReader();
-    r.onload=e=>{try{DATA=JSON.parse(e.target.result);save();renderMap();renderStats();if(currentBedId)renderBedEditor();alert("Imported!");}catch(err){alert("Invalid file");}};
-    r.readAsText(f); ev.target.value="";
+    const f = ev.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+        try {
+            const d = JSON.parse(e.target.result);
+            if (d.version === 4 && d.beds) {
+                bedsRef.set(d.beds);
+                alert("Imported!");
+            } else if (d.version === 3 && d.beds) {
+                migrateV3toV4(d);
+                alert("Imported & migrated from v3!");
+            } else {
+                alert("Unrecognized format");
+            }
+        } catch (err) { alert("Invalid file"); }
+    };
+    r.readAsText(f); ev.target.value = "";
 }
+
 function resetData() {
-    if(!confirm("Reset ALL garden data?"))return;
-    DATA=defaultData();save();
-    if(currentBedId)closeBedEditor();
-    renderMap();renderStats();
+    if (!confirm("Reset ALL garden data? This cannot be undone.")) return;
+    const fresh = defaultBeds();
+    bedsRef.set(fresh);
+    if (currentBedId) closeBedEditor();
 }
 
 /* ═══════════════════════════════════════════════
@@ -908,7 +933,6 @@ function resetData() {
 renderStats();
 renderMap();
 
-// Register service worker for PWA / offline support
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
