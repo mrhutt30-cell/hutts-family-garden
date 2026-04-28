@@ -1117,6 +1117,11 @@ function renderPalette(filter, skipApiTrigger) {
         html += `<div class="pal-divider pal-searching">🔍 Searching online…</div>`;
     }
 
+    // Show API error if any
+    if (apiSearchError && q && q.length >= 2) {
+        html += `<div class="pal-divider" style="color:#c09a8a;font-size:.7rem">${apiSearchError}</div>`;
+    }
+
     // Always show "Add custom" when searching
     if (q && canEdit()) {
         html += `<div class="pal-item custom-add" data-src="custom">
@@ -1163,13 +1168,31 @@ function renderPalette(filter, skipApiTrigger) {
 }
 
 /* ─── Perenual API Search (needs free key from perenual.com) ─── */
-const PERENUAL_KEY = 'sk-J6h669f0cdebe018616821'; // Get a free key at perenual.com/docs/api to enable online plant search
+const PERENUAL_KEY = 'sk-J6h669f0cdebe018616821';
+let apiSearchError = '';
 async function searchPlantsAPI(query) {
     if (!PERENUAL_KEY) return;
+    apiSearchError = '';
     try {
         const resp = await fetch(`https://perenual.com/api/species-list?key=${PERENUAL_KEY}&q=${encodeURIComponent(query)}`);
-        if (!resp.ok) { apiSearching = false; renderPalette(document.getElementById("palSearch").value, true); return; }
+        if (!resp.ok) {
+            const body = await resp.json().catch(() => ({}));
+            if (resp.status === 429 || body['X-RateLimit-Exceeded']) {
+                apiSearchError = '⚠️ Daily API limit reached — use "Add custom plant" instead';
+            } else {
+                apiSearchError = '⚠️ Online search unavailable';
+            }
+            apiSearching = false;
+            renderPalette(document.getElementById("palSearch").value, true);
+            return;
+        }
         const data = await resp.json();
+        if (data['X-RateLimit-Exceeded']) {
+            apiSearchError = '⚠️ Daily API limit reached — use "Add custom plant" instead';
+            apiSearching = false;
+            renderPalette(document.getElementById("palSearch").value, true);
+            return;
+        }
         const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
         apiResults = (data.data || []).slice(0, 8)
             .filter(sp => sp.common_name && !existing.has(sp.common_name.toLowerCase()))
@@ -1186,10 +1209,12 @@ async function searchPlantsAPI(query) {
                 };
             });
         apiSearching = false;
+        apiSearchError = '';
         const q = document.getElementById("palSearch").value;
         if (q) renderPalette(q, true);
     } catch(e) {
         apiSearching = false;
+        apiSearchError = '⚠️ Online search failed — check your connection';
         const q = document.getElementById("palSearch").value;
         if (q) renderPalette(q, true);
     }
