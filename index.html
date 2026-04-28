@@ -147,6 +147,28 @@ header h1 .leaf{color:#d4a843}
 .auth-btn-sign-in{background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a}
 .auth-btn-sign-out{background:#3a3530;color:#9a8a75;border:1px solid #4a4540}
 .readonly-banner{text-align:center;padding:.4rem;background:rgba(154,138,117,.1);color:#9a8a75;font-size:.78rem;border-bottom:1px solid #3a3530}
+/* Custom plant dialog */
+.custom-plant-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.custom-plant-form{background:#2a2725;border:1px solid #3a3530;border-radius:14px;padding:1.2rem;width:100%;max-width:340px;color:#ede6d3}
+.custom-plant-form h3{font-size:1rem;margin-bottom:.8rem;color:#d4a843}
+.cpf-row{margin-bottom:.6rem}
+.cpf-row label{display:block;font-size:.75rem;color:#9a8a75;margin-bottom:.2rem;font-weight:600}
+.cpf-row input[type="text"]{width:100%;padding:.5rem;background:#1e1c1a;border:1px solid #3a3530;border-radius:8px;color:#ede6d3;font-size:.9rem}
+.cpf-row input[type="text"]:focus{outline:none;border-color:#d4a843}
+.cpf-colors{display:flex;gap:.4rem;flex-wrap:wrap}
+.cpf-color{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.cpf-color.picked{border-color:#d4a843;box-shadow:0 0 8px rgba(212,168,67,.3)}
+.cpf-emojis{display:flex;gap:.3rem;flex-wrap:wrap}
+.cpf-emoji{font-size:1.2rem;padding:.2rem .3rem;cursor:pointer;border-radius:6px;border:2px solid transparent}
+.cpf-emoji.picked{border-color:#d4a843;background:rgba(212,168,67,.1)}
+.cpf-btns{display:flex;gap:.5rem;margin-top:.8rem}
+.cpf-btns button{flex:1;padding:.5rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;min-height:40px}
+.cpf-save{background:linear-gradient(135deg,#d4a843,#c8942d);color:#1e1c1a}
+.cpf-cancel{background:#3a3530;color:#9a8a75}
+/* API search results in palette */
+.pal-divider{padding:.4rem .8rem;font-size:.7rem;font-weight:700;color:#9a8a75;text-transform:uppercase;letter-spacing:1px;background:#302c28;border-bottom:1px solid #3a3530}
+.pal-item.api-result{border-left:3px solid #2d5a3f}
+.pal-item.custom-add{border-left:3px solid #d4a843;color:#d4a843;font-weight:600}
 </style>
 </head>
 <body>
@@ -211,6 +233,25 @@ header h1 .leaf{color:#d4a843}
         </div>
     </div>
     <div class="plant-summary" id="plantSummary"></div>
+</div>
+
+<!-- Custom plant modal -->
+<div class="custom-plant-modal" id="customPlantModal" style="display:none">
+    <div class="custom-plant-form">
+        <h3>🌱 Add Custom Plant</h3>
+        <div class="cpf-row"><label>Plant Name</label><input type="text" id="cpfCrop" placeholder="e.g. Rhubarb"></div>
+        <div class="cpf-row"><label>Variety (optional)</label><input type="text" id="cpfVariety" placeholder="e.g. Victoria"></div>
+        <div class="cpf-row"><label>Color</label>
+            <div class="cpf-colors" id="cpfColors"></div>
+        </div>
+        <div class="cpf-row"><label>Icon</label>
+            <div class="cpf-emojis" id="cpfEmojis"></div>
+        </div>
+        <div class="cpf-btns">
+            <button class="cpf-cancel" onclick="closeCustomPlantModal()">Cancel</button>
+            <button class="cpf-save" onclick="saveCustomPlant()">Add Plant</button>
+        </div>
+    </div>
 </div>
 
 <!-- Data bar -->
@@ -359,12 +400,6 @@ PLANTS.forEach(p => {
         ? `${p.variety} ${p.crop}` : p.variety === "(other)" ? `${p.crop} (other)` : p.crop;
     p._search = `${p.crop} ${p.variety} ${p.displayName} ${p.cat}`.toLowerCase();
 });
-
-function findPlant(crop, variety) {
-    return PLANTS.find(p => p.crop === crop && p.variety === variety)
-        || PLANTS.find(p => p.crop === crop)
-        || {crop,variety,displayName:crop+" "+variety,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
-}
 
 /* ═══════════════════════════════════════════════
    GARDEN LAYOUT
@@ -705,14 +740,45 @@ function closeBedEditor() {
 }
 
 /* ─── Palette ─── */
+let apiSearchTimeout = null;
+let apiResults = [];
+let customPlants = []; // loaded from Firebase
+
+// Load custom plants from Firebase
+db.ref('gardens/hutts-family-garden/customPlants').on('value', snap => {
+    customPlants = [];
+    const val = snap.val();
+    if (val) {
+        Object.values(val).forEach(p => {
+            p._search = `${p.crop} ${p.variety} ${p.displayName} ${p.cat}`.toLowerCase();
+            customPlants.push(p);
+        });
+    }
+    // Re-render palette if editor is open
+    if (currentBedId) renderPalette(document.getElementById("palSearch").value);
+});
+
+function getAllPlants() {
+    return [...PLANTS, ...customPlants];
+}
+
+function findPlant(crop, variety) {
+    const all = getAllPlants();
+    return all.find(p => p.crop === crop && p.variety === variety)
+        || all.find(p => p.crop === crop)
+        || {crop,variety,displayName:crop+" "+variety,emoji:"🌱",color:"#66bb6a",cat:"Other",_search:""};
+}
+
 function renderPalette(filter) {
     const list = document.getElementById("palList");
     const q = (filter || "").toLowerCase().trim();
-    const filtered = q ? PLANTS.filter(p => p._search.includes(q)) : PLANTS;
-    list.innerHTML = filtered.map((p, i) => {
-        const idx = PLANTS.indexOf(p);
+    const all = getAllPlants();
+    const filtered = q ? all.filter(p => p._search.includes(q)) : all;
+
+    let html = filtered.map((p, i) => {
+        const idx = all.indexOf(p);
         const sel = selectedPlant === p ? " selected" : "";
-        return `<div class="pal-item${sel}" data-pidx="${idx}">
+        return `<div class="pal-item${sel}" data-pidx="${idx}" data-src="local">
             <div class="pal-dot" style="background:${p.color}"></div>
             <span class="pal-emoji">${p.emoji}</span>
             <span class="pal-name">${p.displayName}</span>
@@ -720,17 +786,169 @@ function renderPalette(filter) {
         </div>`;
     }).join("");
 
+    // Show API results if we have them
+    if (q && apiResults.length > 0) {
+        html += `<div class="pal-divider">🌐 Online Results</div>`;
+        html += apiResults.map((p, i) => {
+            const sel = selectedPlant && selectedPlant._apiIdx === i ? " selected" : "";
+            return `<div class="pal-item api-result${sel}" data-pidx="${i}" data-src="api">
+                <div class="pal-dot" style="background:${p.color}"></div>
+                <span class="pal-emoji">${p.emoji}</span>
+                <span class="pal-name">${p.displayName}</span>
+                <span class="pal-cat">${p.cat}</span>
+            </div>`;
+        }).join("");
+    }
+
+    // Always show "Add custom" when searching
+    if (q && canEdit()) {
+        html += `<div class="pal-item custom-add" data-src="custom">
+            <span class="pal-emoji">➕</span>
+            <span class="pal-name">Add "${filter}" as custom plant…</span>
+        </div>`;
+    }
+
+    list.innerHTML = html;
+
     list.querySelectorAll(".pal-item").forEach(el => {
         el.addEventListener("click", () => {
-            selectedPlant = PLANTS[parseInt(el.dataset.pidx)];
-            selectedPlantId = null; // deselect canvas plant when choosing from palette
+            const src = el.dataset.src;
+            if (src === "custom") {
+                openCustomPlantModal(filter);
+                return;
+            }
+            if (src === "api") {
+                selectedPlant = apiResults[parseInt(el.dataset.pidx)];
+            } else {
+                selectedPlant = all[parseInt(el.dataset.pidx)];
+            }
+            selectedPlantId = null;
             list.querySelectorAll(".pal-item").forEach(e => e.classList.remove("selected"));
             el.classList.add("selected");
             document.getElementById("canvasHint").textContent =
                 `Tap inside the bed to place ${selectedPlant.displayName}`;
-            renderBedCanvas(); // clear canvas selection
+            renderBedCanvas();
         });
     });
+
+    // Trigger API search after debounce
+    if (q && q.length >= 2) {
+        clearTimeout(apiSearchTimeout);
+        apiSearchTimeout = setTimeout(() => searchPlantsAPI(q), 400);
+    } else {
+        apiResults = [];
+    }
+}
+
+/* ─── Perenual API Search (needs free key from perenual.com) ─── */
+const PERENUAL_KEY = ''; // Get a free key at perenual.com/docs/api to enable online plant search
+async function searchPlantsAPI(query) {
+    if (!PERENUAL_KEY) return; // API disabled — custom entry still works
+    try {
+        const resp = await fetch(`https://perenual.com/api/species-list?key=${PERENUAL_KEY}&q=${encodeURIComponent(query)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const existing = new Set(getAllPlants().map(p => p.displayName.toLowerCase()));
+        apiResults = (data.data || []).slice(0, 8)
+            .filter(sp => sp.common_name && !existing.has(sp.common_name.toLowerCase()))
+            .map((sp, i) => {
+                const name = sp.common_name;
+                const cycle = sp.cycle || '';
+                const cat = guessCategory(name, cycle);
+                const color = catColors[cat] || '#66bb6a';
+                const emoji = catEmojis[cat] || '🌱';
+                return {
+                    crop: name, variety: 'Standard', displayName: name,
+                    emoji, color, cat, _search: name.toLowerCase(),
+                    _apiIdx: i, _fromAPI: true
+                };
+            });
+        // Re-render palette to show API results (keep current filter)
+        const q = document.getElementById("palSearch").value;
+        if (q) renderPalette(q);
+    } catch(e) { /* silent fail */ }
+}
+
+const catColors = {Herb:'#43a047','Fruit Veg':'#c62828',Flower:'#e91e63',Tree:'#5d4037',Succulent:'#78909c','Leafy Green':'#2e7d32',Other:'#66bb6a'};
+const catEmojis = {Herb:'🌿','Fruit Veg':'🍅',Flower:'🌸',Tree:'🌳',Succulent:'🪴','Leafy Green':'🥬',Other:'🌱'};
+function guessCategory(name, cycle) {
+    const n = name.toLowerCase();
+    if (/basil|mint|thyme|oregano|sage|rosemary|parsley|cilantro|dill|chive|lavender|lemongrass/.test(n)) return 'Herb';
+    if (/tomato|pepper|eggplant|squash|cucumber|melon|bean|pea/.test(n)) return 'Fruit Veg';
+    if (/rose|daisy|lily|tulip|sunflower|marigold|zinnia|petunia|dahlia|iris|pansy/.test(n)) return 'Flower';
+    if (/tree|oak|maple|pine|birch|cedar|spruce/.test(n)) return 'Tree';
+    if (/cactus|succulent|aloe|agave|sedum/.test(n)) return 'Succulent';
+    if (/lettuce|spinach|kale|chard|arugula|collard/.test(n)) return 'Leafy Green';
+    return 'Other';
+}
+
+/* ─── Custom Plant Modal ─── */
+const CUSTOM_COLORS = ['#c62828','#e65100','#f9a825','#2e7d32','#1b5e20','#00897b','#283593','#6a1b9a','#ad1457','#e91e63','#795548','#78909c','#e0e0e0','#558b2f','#ef6c00','#d32f2f'];
+const CUSTOM_EMOJIS = ['🌱','🍅','🫑','🌶️','🥒','🥬','🥕','🧅','🧄','🥔','🍠','🫘','🥦','🍆','🌽','🌿','🌻','🌸','🌼','🫐','🍓','🍈','🎃','🔴'];
+let customColor = '#2e7d32';
+let customEmoji = '🌱';
+
+function openCustomPlantModal(prefill) {
+    document.getElementById('cpfCrop').value = prefill || '';
+    document.getElementById('cpfVariety').value = '';
+    customColor = '#2e7d32';
+    customEmoji = '🌱';
+
+    const colorsEl = document.getElementById('cpfColors');
+    colorsEl.innerHTML = CUSTOM_COLORS.map(c =>
+        `<div class="cpf-color${c===customColor?' picked':''}" style="background:${c}" data-c="${c}"></div>`
+    ).join('');
+    colorsEl.querySelectorAll('.cpf-color').forEach(el => {
+        el.addEventListener('click', () => {
+            customColor = el.dataset.c;
+            colorsEl.querySelectorAll('.cpf-color').forEach(e => e.classList.remove('picked'));
+            el.classList.add('picked');
+        });
+    });
+
+    const emojisEl = document.getElementById('cpfEmojis');
+    emojisEl.innerHTML = CUSTOM_EMOJIS.map(e =>
+        `<span class="cpf-emoji${e===customEmoji?' picked':''}" data-e="${e}">${e}</span>`
+    ).join('');
+    emojisEl.querySelectorAll('.cpf-emoji').forEach(el => {
+        el.addEventListener('click', () => {
+            customEmoji = el.dataset.e;
+            emojisEl.querySelectorAll('.cpf-emoji').forEach(e => e.classList.remove('picked'));
+            el.classList.add('picked');
+        });
+    });
+
+    document.getElementById('customPlantModal').style.display = 'flex';
+}
+
+function closeCustomPlantModal() {
+    document.getElementById('customPlantModal').style.display = 'none';
+}
+
+function saveCustomPlant() {
+    const crop = document.getElementById('cpfCrop').value.trim();
+    if (!crop) { alert('Enter a plant name'); return; }
+    const variety = document.getElementById('cpfVariety').value.trim() || 'Standard';
+    const displayName = variety !== 'Standard' ? `${variety} ${crop}` : crop;
+
+    // Check if already exists
+    const all = getAllPlants();
+    if (all.find(p => p.crop.toLowerCase() === crop.toLowerCase() && p.variety.toLowerCase() === variety.toLowerCase())) {
+        alert(`${displayName} already exists in the list`);
+        return;
+    }
+
+    const newPlant = { crop, variety, displayName, emoji: customEmoji, color: customColor, cat: 'Custom' };
+
+    // Save to Firebase
+    db.ref('gardens/hutts-family-garden/customPlants').push(newPlant);
+
+    closeCustomPlantModal();
+    // Select it after it loads via the Firebase listener
+    setTimeout(() => {
+        const q = document.getElementById("palSearch").value;
+        renderPalette(q);
+    }, 500);
 }
 
 document.getElementById("palSearch").addEventListener("input", e => renderPalette(e.target.value));
